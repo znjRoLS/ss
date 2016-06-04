@@ -5,6 +5,7 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -20,10 +21,12 @@
 
 ostream& operator<<(ostream& out, Instruction& instr)
 {
-    out << instr.name;
+    out << "Instruction: " << instr.name << endl;
 
     for (int i = 0 ; i < instr.numParameters ; i++)
-        out << " " << instr.parameters[i];
+        out << "\t" << instr.parameters[i]  << endl;
+
+    out << "\tcode:" << hex << instr.instrCode << endl;
 
     out << endl;
 
@@ -33,7 +36,11 @@ ostream& operator<<(ostream& out, Instruction& instr)
 
 ostream& operator<<(ostream& out, Symbol& symbol)
 {
-    out << symbol.name << " " << symbol.defined << " " << symbol.section << " " << symbol.VA << " " << symbol.type << endl;
+    out << "Symbol: " << symbol.name << endl;
+    out << "\tDefined:\t" << symbol.defined << endl;
+    out << "\tSection:\t" << symbol.section << endl;
+    out << "\tVA:\t" << symbol.VA << endl;
+    out << "\tType:\t" << symbol.scope << endl;
 
     return out;
 }
@@ -56,19 +63,17 @@ void Compiler::Compile(ifstream& inputFile)
 {
     cout << "Compiling " << endl;
 
-    unsigned long currentVA = 0;
+    u_int32_t currentVA = 0;
 
-    vector<Symbol> symbols;
+    //unordered_map<string, Instruction*> &instructionsTable = Instruction::instructionTable;
+
+    //vector<Symbol> symbols;
+    unordered_map<string, Symbol*> symbols;
+    vector<Instruction*> instructions;
 
     string currentSection;
-
     SectionType currentSectionType = GLOBAL;
-
-    Instruction *currentInstruction;
-
-    unordered_map<string, Instruction*> &instructionsTable = Instruction::instructionTable;
-
-    vector<Instruction*> instructions;
+//    /Instruction *currentInstruction;
 
     string line;
 
@@ -96,9 +101,24 @@ void Compiler::Compile(ifstream& inputFile)
                     throw "random err";
                 }
 
-                for (; wordNum < tokens.size(); wordNum ++)
+                for (wordNum ++; wordNum < tokens.size(); wordNum ++)
                 {
-                    symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL, 0));
+
+                    if (symbols.find(tokens[wordNum]) != symbols.end())
+                    {
+                        cout << "Already defined symbol " << tokens[wordNum] << endl;
+                        throw "rando";
+                    }
+
+                    Symbol *sym = new Symbol(tokens[wordNum]);
+
+                    sym->defined = tokens[0][01] == 'e';
+                    sym->scope = Symbol::ScopeType::GLOBAL;
+
+                    symbols[tokens[wordNum]] = sym;
+
+
+                    //symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL, 0));
                 }
 
             }
@@ -132,7 +152,26 @@ void Compiler::Compile(ifstream& inputFile)
             {
                 //label:
 
-                symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL, currentVA));
+                string labelName = tokens[wordNum].substr(0,tokens[wordNum].size() - 1);
+
+                Symbol *sym;
+
+                if (symbols.find(labelName) != symbols.end())
+                {
+                    sym = symbols[labelName];
+                }
+                else
+                {
+                    sym = new Symbol(labelName);
+                }
+
+                sym->VA = currentVA;
+                sym->section = currentSectionType;
+                sym->defined = true;
+
+                symbols[labelName] = sym;
+
+                //symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL, currentVA));
 
                 wordNum ++;
             }
@@ -182,28 +221,37 @@ void Compiler::Compile(ifstream& inputFile)
 
                 if (currentSectionType == TEXT)
                 {
-                    Instruction *currentInstruction = nullptr;
+                    vector<string> instr;
+                    string instrName;
 
-                    for(; wordNum < tokens.size(); wordNum ++)
-                    {
-                        if (currentInstruction == nullptr)
-                        {
-                            if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
-                            {
-                                cout << "Instruction not supported" << endl;
-                                throw "rand";
-                            }
+                    instrName = tokens[wordNum++];
 
-                            currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
-                            continue;
-                        }
+                    for (;wordNum < tokens.size(); wordNum ++)
+                        instr.push_back(tokens[wordNum]);
 
-                        currentInstruction->SetNextParameter(tokens[wordNum]);
-                    }
+                    //Instruction *currentInstruction = Instruction::ParseInstruction(instrName, instr, instructions, currentVA);
+                    Instruction::ParseInstruction(instrName, instr, instructions, currentVA);
 
-                    instructions.push_back(currentInstruction);
+//                    for(; wordNum < tokens.size(); wordNum ++)
+//                    {
+//                        if (currentInstruction == nullptr)
+//                        {
+//                            if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
+//                            {
+//                                cout << "Instruction not supported" << endl;
+//                                throw "rand";
+//                            }
+//
+//                            currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
+//                            continue;
+//                        }
+//
+//                        currentInstruction->SetNextParameter(tokens[wordNum]);
+//                    }
 
-                    currentVA += 4;
+                    //instructions.push_back(currentInstruction);
+
+//                    /currentVA += 4;
                 }
             }
 
@@ -212,10 +260,10 @@ void Compiler::Compile(ifstream& inputFile)
 
     }
 
-
-    for(int i = 0 ; i < symbols.size() ; i ++)
+    //typedef std::map<std::string, std::map<std::string, std::string>>::iterator it_type;
+    for(auto iterator = symbols.begin(); iterator != symbols.end(); iterator++)
     {
-        cout << symbols[i];
+        cout << *(iterator->second);
     }
 
     for (int i = 0; i < instructions.size() ; i++)

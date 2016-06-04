@@ -15,17 +15,19 @@ using namespace std;
 class Symbol
 {
 public:
-    enum Scope { GLOBAL, LOCAL };
+
+    enum ScopeType { GLOBAL, LOCAL };
 
     friend ostream &operator<<(ostream &, Symbol &);
+
+    Symbol(string _name, bool _defined = false, SectionType _section = SectionType::GLOBAL, ScopeType _scope = ScopeType::LOCAL, unsigned long _VA = 0);
 
     string name;
     bool defined;
     unsigned long VA;
     SectionType section;
-    Scope type;
+    ScopeType scope;
 
-    Symbol(string _name, bool _defined, SectionType _section, Scope _type, unsigned long _VA);
 };
 
 #endif //SS_SYMBOL_H
