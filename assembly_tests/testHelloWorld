@@ -1,0 +1,8 @@
+.public _start
+.data
+    a: .word 0x12345678
+.text
+_start:
+    ldr r1, 5
+    ldr r2, 6
+    add r2,r2,r1

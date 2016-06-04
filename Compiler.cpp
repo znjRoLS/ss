@@ -13,23 +13,17 @@
 #include <memory>
 
 #include "Compiler.h"
+#include "Symbol.h"
+#include "Instruction.h"
 
 
-class Instruction
-{
-public:
-    Instruction(string _name):name(_name){};
-    friend ostream& operator<<(ostream&, Instruction&);
-private:
-    string name;
-};
+
 
 ostream& operator<<(ostream& out, Instruction& instr)
 {
     out << instr.name;
     return out;
 }
-
 
 void split(const string&, const char*, vector<string>&);
 
@@ -49,20 +43,22 @@ void Compiler::Compile(ifstream& inputFile)
 {
     cout << "Compiling " << endl;
 
+    vector<Symbol> symbols;
+
     string currentSection;
+
+    SectionType currentSectionType = GLOBAL;
+
     Instruction *currentInstruction;
 
-    unordered_map<string, shared_ptr<Instruction>> instructions =
-            {
-                    {"add", new Instruction("add")}
-            };
+    unordered_map<string, Instruction*> &instructions = Instruction::instructionTable;
 
     string line;
 
     while( getline(inputFile, line) ) {
 
         vector<string> tokens;
-        split(line, " ,", tokens);
+        split(line, " ,\t\n", tokens);
 
 
         if (tokens.size() == 0)
@@ -70,33 +66,89 @@ void Compiler::Compile(ifstream& inputFile)
 
         if (tokens[0][0] == '.') // section
         {
-            currentSection = tokens[0];
-
-        }
-
-        int instrNum = 0;
-        for (int wordNum = 0; wordNum < tokens.size(); wordNum++)
-        {
-            if (wordNum == 0 && tokens[0][0] == '.')
+            if (tokens[0][1] == 'p' || tokens[0][1] == 'e')
             {
+                // .public .extern
+                if (currentSectionType != GLOBAL)
+                {
+                    cout << "Please write public and extern declarations at the begining of the file" << endl;
+                    throw "random err";
+                }
+
+                symbols.push_back(Symbol(tokens[1], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL));
+
+            }
+
+            else
+            {
+                //.text .data .bss
                 currentSection = tokens[0];
-                continue;
-            }
 
-            if (wordNum == 0 && tokens[0][tokens[0].size()-1] == ':')
-            {
-                //label = tokens[0];
-                continue;
-            }
-
-            if (instrNum == 0)
-            {
-                //TODO@rols: very ugly
-                currentInstruction = new Instruction(*instructions[tokens[wordNum]]);
-
+                //TODO@rols: nope.
+                if (tokens[0][1] == 't')
+                    currentSectionType = TEXT;
+                if (tokens[0][1] == 'd')
+                    currentSectionType = DATA;
+                if (tokens[0][1] == 'b')
+                    currentSectionType = BSS;
             }
 
         }
+
+
+        if (tokens[0][tokens[0].size() - 1] == ':')
+        {
+            //label:
+
+            symbols.push_back(Symbol(tokens[0], true, currentSectionType, Symbol::LOCAL));
+
+        }
+
+//        int instrNum = 0;
+//        for (int wordNum = 0; wordNum < tokens.size(); wordNum++)
+//        {
+//            if (wordNum == 0 && tokens[0][0] == '.')
+//            {
+//                currentSection = tokens[0];
+//
+//                if (currentSection == ".public")
+//                {
+//                    symbols.push_back({tokens[1], true});
+//                    wordNum ++;
+//                }
+//
+//                continue;
+//            }
+//
+//            if (wordNum == 0 && tokens[0][tokens[0].size()-1] == ':')
+//            {
+//                //label = tokens[0];
+//
+//                symbols.push_back({tokens[0], true});
+//
+//                continue;
+//            }
+//
+//            if (instrNum == 0)
+//            {
+//                if (instructions.find(tokens[wordNum]) == instructions.end())
+//                {
+//                    cout << "Not a valid instruction! " << line << endl;
+//                    throw "err";
+//                }
+//
+//                currentInstruction = new Instruction(*instructions[tokens[wordNum]]);
+//
+//            }
+//
+//            if (instrNum >=1)
+//            {
+//                currentInstruction->SetParam(instrNum, tokens[wordNum]);
+//            }
+//
+//            instrNum ++;
+//
+//        }
 
 
     }

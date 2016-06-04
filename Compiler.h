@@ -5,10 +5,13 @@
 #ifndef SS_COMPILER_H
 #define SS_COMPILER_H
 
+#include "SectionType.h"
+
 #include <iostream>
 #include <fstream>
 
 using namespace std;
+
 
 class Compiler
 {

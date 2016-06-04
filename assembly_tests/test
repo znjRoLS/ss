@@ -1,5 +1,5 @@
 .global _start
-.text1 0x200
+.text
 	add r9,r8,0x0
 	cmp r10,r9,0x0
 	je dalje
@@ -14,7 +14,7 @@ dalje:
 	iret
 
 
-.text 0x1000
+.text
 _start:
 
 	ldc r5,0x3000
