@@ -18,7 +18,6 @@
 
 
 
-
 ostream& operator<<(ostream& out, Instruction& instr)
 {
     out << instr.name;
@@ -51,7 +50,9 @@ void Compiler::Compile(ifstream& inputFile)
 
     Instruction *currentInstruction;
 
-    unordered_map<string, Instruction*> &instructions = Instruction::instructionTable;
+    unordered_map<string, Instruction*> &instructionsTable = Instruction::instructionTable;
+
+    vector<Instruction*> instructions;
 
     string line;
 
@@ -60,13 +61,17 @@ void Compiler::Compile(ifstream& inputFile)
         vector<string> tokens;
         split(line, " ,\t\n", tokens);
 
+        int wordNum = 0;
+
 
         if (tokens.size() == 0)
             continue;
 
-        if (tokens[0][0] == '.') // section
+        if (tokens[wordNum][0] == '.') // section
         {
-            if (tokens[0][1] == 'p' || tokens[0][1] == 'e')
+
+
+            if (tokens[wordNum][1] == 'p' || tokens[wordNum][1] == 'e')
             {
                 // .public .extern
                 if (currentSectionType != GLOBAL)
@@ -75,7 +80,10 @@ void Compiler::Compile(ifstream& inputFile)
                     throw "random err";
                 }
 
-                symbols.push_back(Symbol(tokens[1], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL));
+                for (; wordNum < tokens.size(); wordNum ++)
+                {
+                    symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL));
+                }
 
             }
 
@@ -85,71 +93,69 @@ void Compiler::Compile(ifstream& inputFile)
                 currentSection = tokens[0];
 
                 //TODO@rols: nope.
-                if (tokens[0][1] == 't')
+                if (tokens[wordNum][1] == 't')
                     currentSectionType = TEXT;
-                if (tokens[0][1] == 'd')
+                if (tokens[wordNum][1] == 'd')
                     currentSectionType = DATA;
-                if (tokens[0][1] == 'b')
+                if (tokens[wordNum][1] == 'b')
                     currentSectionType = BSS;
             }
 
+            wordNum ++;
         }
 
-
-        if (tokens[0][tokens[0].size() - 1] == ':')
+        if (wordNum < tokens.size())
         {
-            //label:
+            if (currentSectionType == GLOBAL)
+            {
+                cout << "Error, global section" << endl;
+                throw "rand err";
+            }
 
-            symbols.push_back(Symbol(tokens[0], true, currentSectionType, Symbol::LOCAL));
+            if (tokens[wordNum][tokens[0].size() - 1] == ':')
+            {
+                //label:
 
+                symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL));
+
+                wordNum ++;
+            }
+
+            if (currentSectionType == DATA)
+            {
+                if (tokens[wordNum][0] != '.')
+                {
+                    cout << "Error in parsing" << endl;
+                    throw "random";
+                }
+
+
+            }
+
+            if (currentSectionType == TEXT)
+            {
+                Instruction *currentInstruction = nullptr;
+
+                for(; wordNum < tokens.size(); wordNum ++)
+                {
+                    if (currentInstruction == nullptr)
+                    {
+                        if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
+                        {
+                            cout << "Instruction not supported" << endl;
+                            throw "rand";
+                        }
+
+                        currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
+                        continue;
+                    }
+
+                    currentInstruction->SetNextParameter(tokens[wordNum]);
+                }
+
+                instructions.push_back(currentInstruction);
+            }
         }
-
-//        int instrNum = 0;
-//        for (int wordNum = 0; wordNum < tokens.size(); wordNum++)
-//        {
-//            if (wordNum == 0 && tokens[0][0] == '.')
-//            {
-//                currentSection = tokens[0];
-//
-//                if (currentSection == ".public")
-//                {
-//                    symbols.push_back({tokens[1], true});
-//                    wordNum ++;
-//                }
-//
-//                continue;
-//            }
-//
-//            if (wordNum == 0 && tokens[0][tokens[0].size()-1] == ':')
-//            {
-//                //label = tokens[0];
-//
-//                symbols.push_back({tokens[0], true});
-//
-//                continue;
-//            }
-//
-//            if (instrNum == 0)
-//            {
-//                if (instructions.find(tokens[wordNum]) == instructions.end())
-//                {
-//                    cout << "Not a valid instruction! " << line << endl;
-//                    throw "err";
-//                }
-//
-//                currentInstruction = new Instruction(*instructions[tokens[wordNum]]);
-//
-//            }
-//
-//            if (instrNum >=1)
-//            {
-//                currentInstruction->SetParam(instrNum, tokens[wordNum]);
-//            }
-//
-//            instrNum ++;
-//
-//        }
-
 
     }
 

@@ -4,18 +4,25 @@
 
 #include "Instruction.h"
 
+
+Instruction::Instruction(string _name):
+        name(_name)
+{
+        numParameters = 0;
+};
+
 unordered_map<string,Instruction*> Instruction::instructionTable =
         {
                 {"add", new Instruction("add")},
                 {"cmp", new Instruction("cmp")},
                 {"je", new Instruction("je")},
                 {"out", new Instruction("out")},
-                {"iret", new Instruction("iret")},
+                {"ldr", new Instruction("ldr")},
                 {"lds", new Instruction("lds")},
         };
 
 
-void Instruction::SetParam(int ind, string param)
+void Instruction::SetNextParameter(string param)
 {
-        parameters[ind] = param;
+        parameters[numParameters++] = param;
 }

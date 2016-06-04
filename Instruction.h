@@ -12,15 +12,17 @@ using namespace std;
 
 class Instruction {
 public:
-    Instruction(string _name) : name(_name) { };
+    Instruction(string _name);
 
     friend ostream &operator<<(ostream &, Instruction &);
 
-    void SetParam(int ind, string param);
+    void SetNextParameter(string param);
 
     static unordered_map<string,Instruction*> instructionTable;
 private:
     string name;
+
+    int numParameters;
 
     string parameters[3];
 
