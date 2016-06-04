@@ -21,6 +21,20 @@
 ostream& operator<<(ostream& out, Instruction& instr)
 {
     out << instr.name;
+
+    for (int i = 0 ; i < instr.numParameters ; i++)
+        out << " " << instr.parameters[i];
+
+    out << endl;
+
+    return out;
+}
+
+
+ostream& operator<<(ostream& out, Symbol& symbol)
+{
+    out << symbol.name << " " << symbol.defined << " " << symbol.section << " " << symbol.VA << " " << symbol.type << endl;
+
     return out;
 }
 
@@ -41,6 +55,8 @@ Compiler::~Compiler()
 void Compiler::Compile(ifstream& inputFile)
 {
     cout << "Compiling " << endl;
+
+    unsigned long currentVA = 0;
 
     vector<Symbol> symbols;
 
@@ -82,7 +98,7 @@ void Compiler::Compile(ifstream& inputFile)
 
                 for (; wordNum < tokens.size(); wordNum ++)
                 {
-                    symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL));
+                    symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL, 0));
                 }
 
             }
@@ -116,47 +132,95 @@ void Compiler::Compile(ifstream& inputFile)
             {
                 //label:
 
-                symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL));
+                symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL, currentVA));
 
                 wordNum ++;
             }
 
-            if (currentSectionType == DATA)
+            if (wordNum < tokens.size())
             {
-                if (tokens[wordNum][0] != '.')
+                if (currentSectionType == DATA)
                 {
-                    cout << "Error in parsing" << endl;
-                    throw "random";
-                }
-
-
-            }
-
-            if (currentSectionType == TEXT)
-            {
-                Instruction *currentInstruction = nullptr;
-
-                for(; wordNum < tokens.size(); wordNum ++)
-                {
-                    if (currentInstruction == nullptr)
+                    if (tokens[wordNum][0] != '.')
                     {
-                        if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
-                        {
-                            cout << "Instruction not supported" << endl;
-                            throw "rand";
-                        }
-
-                        currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
-                        continue;
+                        cout << "Error in parsing" << endl;
+                        throw "random";
                     }
 
-                    currentInstruction->SetNextParameter(tokens[wordNum]);
+                    if (tokens[wordNum] == ".char")
+                    {
+                        currentVA += 1;
+                    }
+
+                    if (tokens[wordNum] == ".word")
+                    {
+                        currentVA += 4;
+                    }
+
+
+                    if (tokens[wordNum] == ".long")
+                    {
+                        currentVA += 4;
+                    }
+
+                    if (tokens[wordNum] == ".align")
+                    {
+                        if (currentVA/4*4 != currentVA)
+                        {
+                            currentVA = (currentVA/4+1)*4;
+                        }
+                    }
+
+                    if (tokens[wordNum] == ".skip")
+                    {
+                        currentVA += atoi(tokens[wordNum+1].c_str());
+                    }
+
+
+
                 }
 
-                instructions.push_back(currentInstruction);
+                if (currentSectionType == TEXT)
+                {
+                    Instruction *currentInstruction = nullptr;
+
+                    for(; wordNum < tokens.size(); wordNum ++)
+                    {
+                        if (currentInstruction == nullptr)
+                        {
+                            if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
+                            {
+                                cout << "Instruction not supported" << endl;
+                                throw "rand";
+                            }
+
+                            currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
+                            continue;
+                        }
+
+                        currentInstruction->SetNextParameter(tokens[wordNum]);
+                    }
+
+                    instructions.push_back(currentInstruction);
+
+                    currentVA += 4;
+                }
             }
+
+
         }
 
+    }
+
+
+    for(int i = 0 ; i < symbols.size() ; i ++)
+    {
+        cout << symbols[i];
+    }
+
+    for (int i = 0; i < instructions.size() ; i++)
+    {
+        cout << *(instructions[i]);
     }
 
 

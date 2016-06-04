@@ -17,13 +17,15 @@ class Symbol
 public:
     enum Scope { GLOBAL, LOCAL };
 
+    friend ostream &operator<<(ostream &, Symbol &);
+
     string name;
     bool defined;
-    int value;
+    unsigned long VA;
     SectionType section;
     Scope type;
 
-    Symbol(string _name, bool _defined, SectionType _section, Scope _type);
+    Symbol(string _name, bool _defined, SectionType _section, Scope _type, unsigned long _VA);
 };
 
 #endif //SS_SYMBOL_H
