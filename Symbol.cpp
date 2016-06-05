@@ -4,12 +4,12 @@
 
 #include "Symbol.h"
 
-Symbol::Symbol(string _name, bool _defined, SectionType _section, ScopeType _scope, unsigned long _VA):
-        name(_name),
-        defined(_defined),
-        section(_section),
-        scope(_scope),
-        VA(_VA)
-{
-
-}
+//Symbol::Symbol(string _name, bool _defined, SectionType _section, ScopeType _scope, unsigned long _VA):
+//        name(_name),
+//        defined(_defined),
+//        section(_section),
+//        scope(_scope),
+//        VA(_VA)
+//{
+//
+//}

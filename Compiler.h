@@ -6,6 +6,9 @@
 #define SS_COMPILER_H
 
 #include "SectionType.h"
+#include "Compiler.h"
+#include "Symbol.h"
+#include "Instruction.h"
 
 #include <iostream>
 #include <fstream>
@@ -20,10 +23,22 @@ public:
     Compiler();
     ~Compiler();
 
-    void Compile(ifstream& inputFile);
-    void WriteObjectFile(ofstream& outputFile);
+    void Compile(ifstream& inputFile, ofstream& outputFile);
 
 private:
+
+    static unordered_map<string, function<void()> > sectionProcessFunctions;
+
+    void LoadAssemblyFromFile(ifstream& inputFile);
+    void FirstRun();
+    void SecondRun();
+    void WriteObjectFile(ofstream& outputFile);
+
+    unordered_map<string, Symbol> symbols;
+    vector<Instruction*> instructions;
+
+    vector<vector<string> > assemblyInput;
+
 
 };
 

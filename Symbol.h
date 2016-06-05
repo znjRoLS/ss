@@ -20,7 +20,7 @@ public:
 
     friend ostream &operator<<(ostream &, Symbol &);
 
-    Symbol(string _name, bool _defined = false, SectionType _section = SectionType::GLOBAL, ScopeType _scope = ScopeType::LOCAL, unsigned long _VA = 0);
+    //Symbol(string _name, bool _defined = false, SectionType _section = SectionType::GLOBAL, ScopeType _scope = ScopeType::LOCAL, unsigned long _VA = 0);
 
     string name;
     bool defined;

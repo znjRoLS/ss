@@ -28,9 +28,7 @@ int main(int argc, char ** argv) {
     }
 
     try {
-        compiler->Compile(inputFile);
-
-        compiler->WriteObjectFile(outputFile);
+        compiler->Compile(inputFile, outputFile);
     }
     catch( exception& e)
     {
