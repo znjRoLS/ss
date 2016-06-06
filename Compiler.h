@@ -34,6 +34,8 @@ private:
     void SecondRun();
     void WriteObjectFile(ofstream& outputFile);
 
+    void AddNewSymbol(string symName, bool symDefined, SectionType symSection, Symbol::ScopeType symScope, u_int32_t locationCounter);
+
     unordered_map<string, Symbol> symbols;
     vector<Instruction*> instructions;
 

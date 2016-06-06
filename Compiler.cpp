@@ -12,9 +12,13 @@
 #include <iterator>
 #include <unordered_map>
 #include <memory>
+#include <queue>
+#include <regex>
 
 #include "Compiler.h"
 
+
+enum State {LINE_BEGIN, END, AFTER_PUB_EXT, AFTER_SECTION, AFTER_DIRECTIVE, AFTER_LABEL};
 
 //unordered_map<string, function<void()> > Compiler::sectionProcessFunctions =
 //    {
@@ -22,6 +26,8 @@
 //
 //        }}
 //    };
+
+
 
 
 ostream& operator<<(ostream& out, Instruction& instr)
@@ -313,86 +319,263 @@ void Compiler::LoadAssemblyFromFile(ifstream &inputFile)
     }
 }
 
+//regex r(
+//    "^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$");
+//
+//smatch base_match;
+//
+//if (regex_match(instructionName, base_match, r)) {
+//cout << "success! " << instructionName << endl;
+//for (int i = 0; i < base_match.size(); i++) {
+//cout << "\t" << i << ": " << base_match[i] << endl;
+//}
+//
+//if (base_match[1] == "ldc")
+//{
+
+enum TokenType {PUB_EXT, LABEL, SECTION, DIRECTIVE, INSTRUCTION, OPERAND_REG, OPERAND_DEC, OPERAND_HEX, ILLEGAL};
+
+unordered_map<TokenType, regex> tokenParsers =
+    {
+        { PUB_EXT, regex("^(.public|.extern)$")},
+        { LABEL, regex("^([a-zA-Z_][a-zA-Z0-9]*:)$")},
+        { SECTION, regex("^.(text|data|bss)[.([a-zA-Z_][a-zA-Z0-9]*)]$")},
+        { DIRECTIVE, regex("^.(char|word|long|align|skip)$")},
+        { INSTRUCTION, regex("^[a-zA-Z]*)$")},
+        { OPERAND_REG, regex("^r[0-9]{1,2})$")},
+        { OPERAND_DEC, regex("^([0-9]*)$")},
+        { OPERAND_HEX, regex("^(0x[0-9]*)$")},
+    };
+
+TokenType ParseToken(string token)
+{
+    for (auto &parseRule: tokenParsers)
+    {
+        if (regex_match(token, parseRule.second))
+        {
+            return parseRule.first;
+        }
+    }
+
+    return ILLEGAL;
+}
+
+
+void UpdateCurrentSection(string sectioName, SectionType &currentSection)
+{
+    smatch base_match;
+
+    regex_match(sectioName, base_match, tokenParsers[SECTION]);
+
+    if (base_match[1] == "text")
+        currentSection = TEXT;
+    if (base_match[1] == "data")
+        currentSection = DATA;
+    if (base_match[1] == "bss")
+        currentSection = BSS;
+}
+
+
+void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter)
+{
+    if (directiveName == ".align")
+    {
+        if (locationCounter/4*4 != locationCounter)
+        {
+            locationCounter = (locationCounter/4+1)*4;
+        }
+
+        return;
+    }
+
+
+    string nextToken = tokens.front();
+    tokens.pop();
+
+    TokenType nextTokenType = ParseToken(nextToken);
+
+    if (directiveName == ".char")
+    {
+        locationCounter += 1;
+    }
+
+    if (directiveName == ".word")
+    {
+        locationCounter += 4;
+    }
+
+
+    if (directiveName == ".long")
+    {
+        locationCounter += 4;
+    }
+
+
+
+
+}
+
+
+void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSection, Symbol::ScopeType symScope, u_int32_t locationCounter)
+{
+    if (symbols.find(symName) != symbols.end())
+    {
+        throw "Error, symbol already defined ! " + symName;
+    }
+
+    Symbol sym(symName, symDefined, symSection, symScope, locationCounter);
+
+    symbols[symName] = sym;
+}
 
 void Compiler::FirstRun()
 {
     u_int32_t locationCounter = 0;
+    queue<string> tokensQueue;
+    SectionType currentSectionType;
+    State currentState;
 
-    string currentSection;
-    SectionType currentSectionType = GLOBAL;
+    unordered_map<State, function<State>() > stateMachine =
+        {
+            {
+                LINE_BEGIN, [](){
+                    //tokensQueue.empty will never be true ?
+
+                    string currentToken = tokensQueue.front();
+                    TokenType currentTokenType = ParseToken(currentToken);
+                    if (currentTokenType == LABEL)
+                    {
+                        string labelName = currentToken.substr(0, currentToken.size() - 1);
+
+                        tokensQueue.pop();
+
+                        AddNewSymbol(labelName, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter);
+                    }
+
+                    return AFTER_LABEL;
+                }
+            },
+            {
+                AFTER_LABEL, [](){
+
+                    string currentToken = tokensQueue.front();
+                    TokenType currentTokenType = ParseToken(currentToken);
+
+                    tokensQueue.pop();
+
+                    switch (currentTokenType)
+                    {
+                        case PUB_EXT:
+                            return AFTER_PUB_EXT;
+                        case DIRECTIVE:
+                            HandleDirective(currentToken, tokensQueue, locationCounter);
+                            return AFTER_DIRECTIVE;
+                        case SECTION:
+                            UpdateCurrentSection(currentToken, currentSectionType);
+                            AddNewSymbol(currentToken, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter)
+                            return AFTER_SECTION;
+                    }
+                }
+            },
+        };
 
     for (auto &tokens: assemblyInput)
     {
-
-
-        if (tokens[0][0] == '.') // section
+        for (auto &token: tokens)
         {
-            string sectionName = tokens[0].substr(1, tokens[0].size() - 1);
-
-            string sectionType = sectionName;
-
-            size_t found = sectionType.find('.');
-            if (found != string::npos)
-            {
-                sectionType = sectionType.substr(0,found);
-            }
-
-            if (sectionType == "text" || sectionType == "data" || sectionType == "bss")
-            {
-                //.text .data .bss
-                //currentSection = tokens[0];
-
-                if (sectionType == "text")
-                    currentSectionType = TEXT;
-                if (sectionType == "data")
-                    currentSectionType = DATA;
-                if (sectionType == "bss")
-                    currentSectionType = BSS;
-
-                Symbol sym;
-
-                sym.name = sectionName;
-                sym.defined = true;
-                sym.scope = Symbol::ScopeType::LOCAL;
-                sym.VA = locationCounter;
-
-                symbols[sectionType] = sym;
-            }
-
-            continue;
+            tokensQueue.push(token);
         }
 
-        int wordNum = 0;
+        currentState = LINE_BEGIN;
 
-        if (tokens[0][tokens[0].size()-1] == ':')
+        while (currentState != END)
         {
-            //label
-
-            string labelName = tokens[0].substr(0,tokens[0].size() - 1);
-
-            Symbol sym;
-
-            if (symbols.find(labelName) != symbols.end())
-            {
-                sym = symbols[labelName];
-            }
-
-            sym.name = labelName;
-            sym.VA = locationCounter;
-            sym.section = currentSectionType;
-            sym.defined = true;
-
-            symbols[labelName] = sym;
-
-            wordNum ++;
-        }
-
-        for (; wordNum < tokens.size(); wordNum ++)
-        {
-            if ()
+            currentState = stateMachine[currentState]();
         }
     }
+
 }
+
+
+//void Compiler::FirstRun()
+//{
+//    u_int32_t locationCounter = 0;
+//
+//    string currentSection;
+//    SectionType currentSectionType = GLOBAL;
+//
+//    for (auto &tokens: assemblyInput)
+//    {
+//
+//
+//        if (tokens[0][0] == '.') // section
+//        {
+//            string sectionName = tokens[0].substr(1, tokens[0].size() - 1);
+//
+//            string sectionType = sectionName;
+//
+//            size_t found = sectionType.find('.');
+//            if (found != string::npos)
+//            {
+//                sectionType = sectionType.substr(0,found);
+//            }
+//
+//            if (sectionType == "text" || sectionType == "data" || sectionType == "bss")
+//            {
+//                //.text .data .bss
+//                //currentSection = tokens[0];
+//
+//                if (sectionType == "text")
+//                    currentSectionType = TEXT;
+//                if (sectionType == "data")
+//                    currentSectionType = DATA;
+//                if (sectionType == "bss")
+//                    currentSectionType = BSS;
+//
+//                Symbol sym;
+//
+//                sym.name = sectionName;
+//                sym.defined = true;
+//                sym.scope = Symbol::ScopeType::LOCAL;
+//                sym.VA = locationCounter;
+//
+//                symbols[sectionType] = sym;
+//            }
+//
+//            continue;
+//        }
+//
+//        int wordNum = 0;
+//
+//        if (tokens[0][tokens[0].size()-1] == ':')
+//        {
+//            //label
+//
+//            string labelName = tokens[0].substr(0,tokens[0].size() - 1);
+//
+//            Symbol sym;
+//
+//            if (symbols.find(labelName) != symbols.end())
+//            {
+//                sym = symbols[labelName];
+//            }
+//
+//            sym.name = labelName;
+//            sym.VA = locationCounter;
+//            sym.section = currentSectionType;
+//            sym.defined = true;
+//
+//            symbols[labelName] = sym;
+//
+//            wordNum ++;
+//        }
+//
+//        for (; wordNum < tokens.size(); wordNum ++)
+//        {
+//            if ()
+//        }
+//    }
+//}
 
 
 void Compiler::SecondRun()
