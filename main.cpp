@@ -27,6 +27,12 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
+    if (!inputFile.is_open())
+    {
+        cout << "Error openning output file" << endl;
+        return 1;
+    }
+
     try {
         compiler->Compile(inputFile, outputFile);
     }
@@ -34,11 +40,6 @@ int main(int argc, char ** argv) {
     {
         cout << e.what() << endl;
     }
-
-
-
-
-
 
     return 0;
 }

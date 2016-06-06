@@ -16,6 +16,7 @@
 #include <regex>
 
 #include "Compiler.h"
+#include "Instruction.h"
 
 
 
@@ -35,10 +36,10 @@ ostream& operator<<(ostream& out, Instruction& instr)
 {
     out << "Instruction: " << instr.name << endl;
 
-    for (int i = 0 ; i < instr.numParameters ; i++)
-        out << "\t" << instr.parameters[i]  << endl;
+    for (auto &temp: instr.parameters)
+        out << "\t" << temp  << endl;
 
-    out << "\tcode:" << hex << instr.instrCode << endl;
+    out << "\tcode:" << hex << instr.instrCode.binaryCode << endl;
 
     out << endl;
 
@@ -57,7 +58,30 @@ ostream& operator<<(ostream& out, Symbol& symbol)
     return out;
 }
 
+ostream& operator<<(ostream& out, SectionType s)
+{
+    if (s == SectionType::GLOBAL)
+        out << "GLOBAL";
+    if (s == SectionType::BSS)
+        out << "BSS";
+    if (s == SectionType::DATA)
+        out << "DATA";
+    if (s == SectionType::TEXT)
+        out << "TEXT";
 
+    return out;
+}
+
+
+ostream& operator<<(ostream& out, Symbol::ScopeType s)
+{
+    if (s == Symbol::ScopeType::GLOBAL)
+        out << "GLOBAL";
+    if (s == Symbol::ScopeType::LOCAL)
+        out << "LOCAL";
+
+    return out;
+}
 
 void split(const string &s, const char* delim, vector<string> & v){
     // to avoid modifying original string
@@ -90,207 +114,9 @@ void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
     cout << "Compiling " << endl;
 
     LoadAssemblyFromFile(inputFile);
-    FirstRun();
-    SecondRun();
+    FirstRun(outputFile);
+    SecondRun(outputFile);
     WriteObjectFile(outputFile);
-
-//
-//    u_int32_t currentVA = 0;
-//
-//    string currentSection;
-//    SectionType currentSectionType = GLOBAL;
-//
-//    string line;
-//    while( getline(inputFile, line) ) {
-//
-//        vector<string> tokens;
-//        split(line, " ,\t\n", tokens);
-//
-//        int wordNum = 0;
-//
-//
-//        if (tokens.size() == 0)
-//            continue;
-//
-//        if (tokens[wordNum][0] == '.') // section
-//        {
-//
-//
-//            if (tokens[wordNum][1] == 'p' || tokens[wordNum][1] == 'e')
-//            {
-//                // .public .extern
-//                if (currentSectionType != GLOBAL)
-//                {
-//                    cout << "Please write public and extern declarations at the begining of the file" << endl;
-//                    throw "random err";
-//                }
-//
-//                for (wordNum ++; wordNum < tokens.size(); wordNum ++)
-//                {
-//
-//                    if (symbols.find(tokens[wordNum]) != symbols.end())
-//                    {
-//                        cout << "Already defined symbol " << tokens[wordNum] << endl;
-//                        throw "rando";
-//                    }
-//
-//                    Symbol *sym = new Symbol(tokens[wordNum]);
-//
-//                    sym->defined = tokens[0][01] == 'e';
-//                    sym->scope = Symbol::ScopeType::GLOBAL;
-//
-//                    symbols[tokens[wordNum]] = sym;
-//
-//
-//                    //symbols.push_back(Symbol(tokens[wordNum], (tokens[0][1] == 'e'), GLOBAL, Symbol::GLOBAL, 0));
-//                }
-//
-//            }
-//
-//            else
-//            {
-//                //.text .data .bss
-//                currentSection = tokens[0];
-//
-//                //TODO@rols: nope.
-//                if (tokens[wordNum][1] == 't')
-//                    currentSectionType = TEXT;
-//                if (tokens[wordNum][1] == 'd')
-//                    currentSectionType = DATA;
-//                if (tokens[wordNum][1] == 'b')
-//                    currentSectionType = BSS;
-//
-//                Symbol *sym = new Symbol(tokens[wordNum]);
-//
-//                sym->defined = true;
-//                sym->scope = Symbol::ScopeType::LOCAL;
-//                sym->VA = currentVA;
-//
-//                symbols[tokens[wordNum]] = sym;
-//            }
-//
-//            wordNum ++;
-//        }
-//
-//        if (wordNum < tokens.size())
-//        {
-//            if (currentSectionType == GLOBAL)
-//            {
-//                cout << "Error, global section" << endl;
-//                throw runtime_error("rand err";
-//            }
-//
-//            if (tokens[wordNum][tokens[0].size() - 1] == ':')
-//            {
-//                //label:
-//
-//                string labelName = tokens[wordNum].substr(0,tokens[wordNum].size() - 1);
-//
-//                Symbol *sym;
-//
-//                if (symbols.find(labelName) != symbols.end())
-//                {
-//                    sym = symbols[labelName];
-//                }
-//                else
-//                {
-//                    sym = new Symbol(labelName);
-//                }
-//
-//                sym->VA = currentVA;
-//                sym->section = currentSectionType;
-//                sym->defined = true;
-//
-//                symbols[labelName] = sym;
-//
-//                //symbols.push_back(Symbol(tokens[wordNum], true, currentSectionType, Symbol::LOCAL, currentVA));
-//
-//                wordNum ++;
-//            }
-//
-//            if (wordNum < tokens.size())
-//            {
-//                if (currentSectionType == DATA)
-//                {
-//                    if (tokens[wordNum][0] != '.')
-//                    {
-//                        cout << "Error in parsing" << endl;
-//                        throw runtime_error("random";
-//                    }
-//
-//                    if (tokens[wordNum] == ".char")
-//                    {
-//                        currentVA += 1;
-//                    }
-//
-//                    if (tokens[wordNum] == ".word")
-//                    {
-//                        currentVA += 4;
-//                    }
-//
-//
-//                    if (tokens[wordNum] == ".long")
-//                    {
-//                        currentVA += 4;
-//                    }
-//
-//                    if (tokens[wordNum] == ".align")
-//                    {
-//                        if (currentVA/4*4 != currentVA)
-//                        {
-//                            currentVA = (currentVA/4+1)*4;
-//                        }
-//                    }
-//
-//                    if (tokens[wordNum] == ".skip")
-//                    {
-//                        currentVA += atoi(tokens[wordNum+1].c_str());
-//                    }
-//
-//
-//
-//                }
-//
-//                if (currentSectionType == TEXT)
-//                {
-//                    vector<string> instr;
-//                    string instrName;
-//
-//                    instrName = tokens[wordNum++];
-//
-//                    for (;wordNum < tokens.size(); wordNum ++)
-//                        instr.push_back(tokens[wordNum]);
-//
-//                    //Instruction *currentInstruction = Instruction::ParseInstruction(instrName, instr, instructions, currentVA);
-//                    Instruction::ParseInstruction(instrName, instr, instructions, currentVA);
-//
-////                    for(; wordNum < tokens.size(); wordNum ++)
-////                    {
-////                        if (currentInstruction == nullptr)
-////                        {
-////                            if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
-////                            {
-////                                cout << "Instruction not supported" << endl;
-////                                throw runtime_error("rand";
-////                            }
-////
-////                            currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
-////                            continue;
-////                        }
-////
-////                        currentInstruction->SetNextParameter(tokens[wordNum]);
-////                    }
-//
-//                    //instructions.push_back(currentInstruction);
-//
-////                    /currentVA += 4;
-//                }
-//            }
-//
-//
-//        }
-//
-//    }
 
 }
 
@@ -320,55 +146,90 @@ void Compiler::LoadAssemblyFromFile(ifstream &inputFile)
     }
 }
 
-//regex r(
-//    "^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$");
-//
-//smatch base_match;
-//
-//if (regex_match(instructionName, base_match, r)) {
-//cout << "success! " << instructionName << endl;
-//for (int i = 0; i < base_match.size(); i++) {
-//cout << "\t" << i << ": " << base_match[i] << endl;
-//}
-//
-//if (base_match[1] == "ldc")
-//{
 
-enum State {LINE_BEGIN, END, AFTER_PUB_EXT, AFTER_SECTION, AFTER_DIRECTIVE, AFTER_LABEL, LINE_END};
+enum State {LINE_BEGIN, END, AFTER_EXT, AFTER_PUB, AFTER_SECTION, AFTER_DIRECTIVE, AFTER_LABEL, LINE_END};
 
-enum TokenType {PUB_EXT, LABEL, SECTION, DIRECTIVE, INSTRUCTION, OPERAND_REG, OPERAND_DEC, OPERAND_HEX, ILLEGAL};
+enum TokenType {PUB_EXT, LABEL, SECTION, DIRECTIVE, INSTRUCTION, OPERAND_REG, OPERAND_REGINCDEC, OPERAND_REGSPEC, OPERAND_REGSPECINCDEC, OPERAND_DEC, OPERAND_HEX, ILLEGAL, SYMBOL};
+
+
+ostream& operator<<(ostream& out, State s)
+{
+    switch(s)
+    {
+        case LINE_END: return out << "LINE_END";
+        case LINE_BEGIN: return out << "LINE_BEGIN";
+        case END: return out << "END";
+        case AFTER_EXT: return out << "AFTER_EXT";
+        case AFTER_PUB: return out << "AFTER_PUB";
+        case AFTER_SECTION: return out << "AFTER_SECTION";
+        case AFTER_DIRECTIVE: return out << "AFTER_DIRECTIVE";
+        case AFTER_LABEL: return out << "AFTER_LABEL";
+    }
+}
+
+ostream& operator<<(ostream& out, TokenType s)
+{
+    switch(s)
+    {
+        case PUB_EXT: return out << "PUB_EXT";
+        case LABEL: return out << "LABEL";
+        case SECTION: return out << "SECTION";
+        case DIRECTIVE: return out << "DIRECTIVE";
+        case INSTRUCTION: return out << "INSTRUCTION";
+        case SYMBOL: return out << "SYMBOL";
+        case OPERAND_REG: return out << "OPERAND_REG";
+        case OPERAND_DEC: return out << "OPERAND_DEC";
+        case OPERAND_HEX: return out << "OPERAND_HEX";
+        case ILLEGAL: return out << "ILLEGAL";
+    }
+}
 
 unordered_map<int, regex> tokenParsers =
     {
         { PUB_EXT, regex("^(.public|.extern)$")},
-        { LABEL, regex("^([a-zA-Z_][a-zA-Z0-9]*:)$")},
+        { LABEL, regex("^([a-zA-Z_][a-zA-Z0-9]*):$")},
         { SECTION, regex("^.(text|data|bss)(.[a-zA-Z_][a-zA-Z0-9]*)?$")},
         { DIRECTIVE, regex("^.(char|word|long|align|skip)$")},
-        { INSTRUCTION, regex("^[a-zA-Z]*$")},
+        { SYMBOL, regex("^([a-zA-Z_][a-zA-Z0-9]*)$")},
         { OPERAND_REG, regex("^r([0-9]{1,2})$")},
+        { OPERAND_REGINCDEC, regex("^(?:(?:(?:\\+\\+|--)r([0-9]{1,2}))|(?:r([0-9]{1,2})(?:\\+\\+|--)))$")},
+        { OPERAND_REGSPEC, regex("^(pc|sp|lr|psw)")},
+        { OPERAND_REGSPECINCDEC, regex("^(?:(?:(?:\\+\\+|--)(pc|sp|lr|psw))|(?:(pc|sp|lr|psw)(?:\\+\\+|--)))$")},
         { OPERAND_DEC, regex("^([0-9]*)$")},
         { OPERAND_HEX, regex("^(0x[0-9]*)$")},
+        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$")}
     };
 
 TokenType ParseToken(string token)
 {
+    TokenType ret = ILLEGAL;
     for (auto &parseRule: tokenParsers)
     {
         if (regex_match(token, parseRule.second))
         {
-            return (TokenType)parseRule.first;
+            if (ret == ILLEGAL)
+            {
+                ret = (TokenType)parseRule.first;
+            }
+            else
+            {
+                throw runtime_error("Ambigous token! " + token);
+            }
         }
     }
 
-    return ILLEGAL;
+    return ret;
 }
 
 
-void UpdateCurrentSection(string sectioName, SectionType &currentSection)
+void UpdateCurrentSection(string sectionName, SectionType &currentSection, u_int32_t &offsetCounter)
 {
+
+    offsetCounter = 0;
+
     smatch base_match;
 
-    regex_match(sectioName, base_match, tokenParsers[SECTION]);
+    regex_match(sectionName, base_match, tokenParsers[SECTION]);
 
     if (base_match[1] == "text")
         currentSection = TEXT;
@@ -379,10 +240,10 @@ void UpdateCurrentSection(string sectioName, SectionType &currentSection)
 }
 
 
-u_int32_t ParseOperand(string token)
+u_int32_t ParseOperand(string token, int immSize = 0)
 {
     smatch base_match;
-
+    bool isReg = false;
     u_int32_t ret;
 
     if (regex_match(token, base_match, tokenParsers[OPERAND_DEC]))
@@ -394,6 +255,7 @@ u_int32_t ParseOperand(string token)
 
     else if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
     {
+        isReg = true;
         stringstream ss;
         ss << base_match[1];
         ss >> ret;
@@ -406,11 +268,19 @@ u_int32_t ParseOperand(string token)
         ss >> hex >> ret;
     }
 
+    if (!isReg && immSize != 0)
+    {
+        ret <<= 32-immSize;
+        int32_t temp = (int32_t)ret;
+        temp >>= 32-immSize;
+        ret = (u_int32_t)temp;
+    }
+
     return ret;
 }
 
 
-void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter)
+void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory)
 {
     if (directiveName == ".align")
     {
@@ -422,58 +292,378 @@ void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &loc
         return;
     }
 
-
     string nextToken = tokens.front();
     tokens.pop();
-
     TokenType nextTokenType = ParseToken(nextToken);
+
+    if (nextTokenType != OPERAND_HEX && nextTokenType != OPERAND_DEC)
+    {
+        throw runtime_error("Bad token " + nextToken + " after directive " + directiveName);
+    }
+
+    u_int32_t operandVal = ParseOperand(nextToken);
+
+
+    if (directiveName == ".skip")
+    {
+        locationCounter += operandVal;
+        return;
+    }
+
+
+    void *binVal = nullptr;
+    size_t numBytes = 0;
 
     if (directiveName == ".char")
     {
-        locationCounter += 1;
+        binVal = new u_int8_t(operandVal);
+        numBytes = 1;
     }
 
     if (directiveName == ".word")
     {
-        locationCounter += 4;
+        binVal = new u_int16_t(operandVal);
+        numBytes = 2;
     }
 
     if (directiveName == ".long")
     {
-        locationCounter += 4;
+        binVal = new u_int32_t(operandVal);
+        numBytes = 4;
     }
 
-    if (directiveName == ".skip")
+    if (writeToMemory)
     {
-        if (nextTokenType != OPERAND_DEC & nextTokenType != OPERAND_HEX)
-        {
-            throw runtime_error("Bad token after skip");
-        }
-
-        locationCounter += ParseOperand(nextToken);
+        memcpy(sections[sectionName] + locationCounter, binVal, numBytes);
     }
+
+    locationCounter += numBytes;
+
+    delete binVal;
+}
+
+
+void Compiler::FillBinaryCodeInstruction(Instruction &instruction, queue<string> &tokens)
+{
+    string instructionName = instruction.name;
+    string condition = instruction.condition;
+    bool setFlags = instruction.setFlags;
 
 
 }
 
 
-void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSection, Symbol::ScopeType symScope, u_int32_t locationCounter)
+
+unordered_map<string, u_int8_t> instructionCodes =
+    {
+        {"int",  0},
+        {"add",  1},
+        {"sub",  2},
+        {"mul",  3},
+        {"div",  4},
+        {"cmp",  5},
+        {"and",  6},
+        {"or",   7},
+        {"not",  8},
+        {"test", 9},
+        {"ldr",  10},
+        {"str",  10},
+        {"call", 12},
+        {"in",   13},
+        {"out",  13},
+        {"mov",  14},
+        {"shr",  14},
+        {"shl",  14},
+        {"ldch", 15},
+        {"ldcl", 15}
+    };
+
+unordered_map<string, u_int8_t> branchCodes =
+    {
+        {"eq", 0},
+        {"ne", 1},
+        {"gt", 2},
+        {"ge", 3},
+        {"lt", 4},
+        {"le", 5},
+        {"",   6},
+        {"al", 7},
+    };
+
+
+
+void GetOperand(queue<string> &tokens, string &token, u_int32_t &operand, TokenType &operandType, vector<TokenType> operandAllowed, int operandImmSize = 0)
+{
+    if (tokens.empty())
+    {
+        throw runtime_error("Not enough operands !");
+    }
+
+    token = tokens.front();
+    tokens.pop();
+    operandType = ParseToken(token);
+
+    if (find(operandAllowed.begin(), operandAllowed.end(), operandType) == operandAllowed.end())
+    {
+        throw runtime_error("Illegal token, expected operand: " + token);
+    }
+
+    operand = ParseOperand(token, operandImmSize);
+}
+
+enum InstructionType {INT, ARITHMETIC, LOGICAL, LOADSTORE, CALL, IO, MOVSHIFT, LOADC};
+
+unordered_map<string, int> instructionTypesMap =
+    {
+        {"int",  INT},
+        {"add",  ARITHMETIC},
+        {"sub",  ARITHMETIC},
+        {"mul",  ARITHMETIC},
+        {"div",  ARITHMETIC},
+        {"cmp",  ARITHMETIC},
+        {"and",  LOGICAL},
+        {"or",   LOGICAL},
+        {"not",  LOGICAL},
+        {"test", LOGICAL},
+        {"ldr",  LOADSTORE},
+        {"str",  LOADSTORE},
+        {"call", CALL},
+        {"in",   IO},
+        {"out",  IO},
+        {"mov",  MOVSHIFT},
+        {"shr",  MOVSHIFT},
+        {"shl",  MOVSHIFT},
+        {"ldch", LOADC},
+        {"ldcl", LOADC}
+    };
+
+
+unordered_map<int, function<void(Instruction&, queue<string>&)> > instructionsHandlers =
+    {
+        {INT, [](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+                GetOperand(tokens, token, operand, operandType, {OPERAND_HEX, OPERAND_DEC}, 4);
+
+                instr.instrCode.instruction_int.src = operand;
+            }
+        },
+        {ARITHMETIC, [](Instruction &instr, queue<string> &tokens) {
+
+                string token1;
+                u_int32_t operand1;
+                TokenType operandType1;
+                GetOperand(tokens, token1, operand1, operandType1, {OPERAND_REG, OPERAND_REGSPEC});
+
+                bool addsub = true;
+                if (instr.name == "mul" || instr.name == "div" || instr.name == "cmp")
+                    addsub = false;
+
+                if (!addsub && operandType1 == OPERAND_REGSPEC)
+                {
+                    throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
+                }
+
+                if (token1 == "psw")
+                {
+                    throw runtime_error("Not allowed to use psw in add or sub");
+                }
+
+                string token2;
+                u_int32_t operand2;
+                TokenType operandType2;
+                GetOperand(tokens, token2, operand2, operandType2, {OPERAND_REG, OPERAND_HEX, OPERAND_DEC}, 18);
+
+                if (operandType2 == OPERAND_REG || operandType2 == OPERAND_REGSPEC)
+                {
+                    if (!addsub && operandType2 == OPERAND_REGSPEC)
+                    {
+                        throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
+                    }
+
+                    if (token2 == "psw")
+                    {
+                        throw runtime_error("Not allowed to use psw in add or sub");
+                    }
+
+                    instr.instrCode.instruction_arithmetic_reg.dst = operand1;
+                    instr.instrCode.instruction_arithmetic_reg.src = operand2;
+                    instr.instrCode.instruction_arithmetic_reg.addr = 0;
+                }
+                else
+                {
+                    instr.instrCode.instruction_arithmetic_imm.dst = operand1;
+                    instr.instrCode.instruction_arithmetic_imm.imm = operand2;
+                    instr.instrCode.instruction_arithmetic_imm.addr = 1;
+                }
+
+            }
+        },
+        {LOGICAL, [](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_logical.dst = operand;
+
+                if ()
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_logical.src = operand;
+            }
+        },
+        {LOADSTORE, [](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_ldr_str.r = operand;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC})
+
+
+                bool isPost, isInc, isAny = true;
+
+                if (nextToken[0] == '+' || nextToken[0] == '-')
+                {
+                    isPost = false;
+                    isInc = (nextToken[0] == '+');
+                }
+                else if (nextToken[nextToken.size()-1] == '+' || nextToken[nextToken.size()-1] == '-')
+                {
+                    isPost = true;
+                    isInc = (nextToken[nextToken.size()-1] == '+');
+                }
+                else
+                {
+                    isAny = false;
+                }
+
+
+                GetOperand(tokens, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_logical.src = operand;
+            }
+        },
+        {CALL, [](Instruction &instr, queue<string> &tokens) {
+
+            u_int32_t operand;
+            TokenType operandType;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.dst = operand;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.src = operand;
+        }
+        },
+        {IO, [](Instruction &instr, queue<string> &tokens) {
+
+            u_int32_t operand;
+            TokenType operandType;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.dst = operand;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.src = operand;
+        }
+        },
+        {MOVSHIFT, [](Instruction &instr, queue<string> &tokens) {
+
+            u_int32_t operand;
+            TokenType operandType;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.dst = operand;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.src = operand;
+        }
+        },
+        {LOADC, [](Instruction &instr, queue<string> &tokens) {
+
+            u_int32_t operand;
+            TokenType operandType;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.dst = operand;
+
+            GetOperand(tokens, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_logical.src = operand;
+        }
+        },
+    };
+
+void Compiler::HandleInstruction(queue<string> &tokens )
+{
+    string instructionName = tokens.front();
+    tokens.pop();
+
+    smatch base_match;
+
+
+
+    if (regex_match(instructionName, base_match, tokenParsers[INSTRUCTION])) {
+
+        string shortInstructionName = base_match[1];
+        string condition = base_match[2];
+        bool setFlags = (base_match[3] == "s");
+
+        Instruction instruction(shortInstructionName, condition, setFlags);
+
+        if (instructionTypesMap.find(shortInstructionName) == instructionTypesMap.end())
+        {
+            throw runtime_error("Error, not valid instruction " + shortInstructionName + " " + instructionName);
+        }
+
+        InstructionType instructionType = (InstructionType) instructionTypesMap[shortInstructionName];
+
+        instruction.instrCode.instruction.instr = instructionCodes[shortInstructionName];
+        instruction.instrCode.instruction.cond = branchCodes[condition];
+        instruction.instrCode.instruction.flag = (setFlags?1:0);
+
+        instructionsHandlers[instructionType](instruction, tokens);
+
+        Instruction instr(shortInstructionName, condition, setFlags);
+
+        FillBinaryCodeInstruction(instr, tokens);
+
+//        Instruction instr(shortInstructionName, condition, setFlags);
+//
+//        instr->instrCode = GetBinaryFromInstruction(base_match[1], base_match[2], base_match[3], parameters);
+        //currentVA += 4;
+
+        instructions.push_back(instr);
+
+    }
+}
+
+
+void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSection, string symSectionName, Symbol::ScopeType symScope, u_int32_t locationCounter)
 {
     if (symbols.find(symName) != symbols.end())
     {
         throw runtime_error("Error, symbol already defined ! " + symName);
     }
 
-    Symbol sym(symName, symDefined, symSection, symScope, locationCounter);
+    Symbol sym(symName, symDefined, symSection, symSectionName, symScope, locationCounter);
 
     symbols[symName] = sym;
 }
 
-void Compiler::FirstRun()
+void Compiler::FirstRun(ofstream& outputFile)
 {
-    u_int32_t locationCounter = 0;
+    //u_int32_t locationCounter = 0;
+    u_int32_t offsetCounter = 0;
     queue<string> tokensQueue;
-    SectionType currentSectionType;
+    SectionType currentSectionType = GLOBAL;
+    string currentSection = "global";
     State currentState;
 
     unordered_map<int, function<State()> > stateMachine =
@@ -490,7 +680,7 @@ void Compiler::FirstRun()
 
                         tokensQueue.pop();
 
-                        AddNewSymbol(labelName, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter);
+                        AddNewSymbol(labelName, true, currentSectionType, currentSection, Symbol::ScopeType::LOCAL, offsetCounter);
                     }
 
                     return AFTER_LABEL;
@@ -523,14 +713,16 @@ void Compiler::FirstRun()
                         {
                             throw runtime_error("Not allowed to write directives not in DATA section!");
                         }
-                        HandleDirective(currentToken, tokensQueue, locationCounter);
+                        HandleDirective(currentToken, tokensQueue, offsetCounter, currentSection, false);
                         return LINE_END;
                     case SECTION:
-                        UpdateCurrentSection(currentToken, currentSectionType);
-                        AddNewSymbol(currentToken, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter);
+                        sections[currentSection] = new u_int8_t[offsetCounter];
+                        currentSection = currentToken;
+                        UpdateCurrentSection(currentToken, currentSectionType, offsetCounter);
+                        AddNewSymbol(currentToken, true, currentSectionType, currentSection, Symbol::ScopeType::LOCAL, offsetCounter);
                         return LINE_END;
                     case INSTRUCTION:
-                        locationCounter += 4;
+                        offsetCounter += 4;
                         while (!tokensQueue.empty()) tokensQueue.pop();
                         return LINE_END;
                     default:
@@ -562,6 +754,186 @@ void Compiler::FirstRun()
 
         while (currentState != END)
         {
+            outputFile << "current state " << currentState << endl;
+            outputFile << "current counter " << offsetCounter << endl;
+            if (!tokensQueue.empty())
+            {
+                outputFile << "current token type " << ParseToken(tokensQueue.front()) << endl;
+                outputFile << "current token " << tokensQueue.front() << endl;
+
+            }
+            else
+            {
+                outputFile << "empty tokensqueue" << endl;
+            }
+
+            outputFile << endl;
+
+            outputFile.flush();
+
+            currentState = stateMachine[currentState]();
+        }
+    }
+
+}
+
+
+void Compiler::SecondRun(ofstream& outputFile)
+{
+    u_int32_t offsetCounter = 0;
+    queue<string> tokensQueue;
+    SectionType currentSectionType = GLOBAL;
+    string currentSection = "global";
+    State currentState;
+
+    unordered_map<int, function<State()> > stateMachine =
+        {
+            {
+                LINE_BEGIN, [&] {
+                    //tokensQueue.empty will never be true ?
+
+                    string currentToken = tokensQueue.front();
+                    TokenType currentTokenType = ParseToken(currentToken);
+                    if (currentTokenType == LABEL)
+                    {
+                        tokensQueue.pop();
+                    }
+
+                    return AFTER_LABEL;
+                }
+            },
+            {
+                AFTER_LABEL, [&](){
+
+                    if (tokensQueue.empty())
+                    {
+                        return END;
+                    }
+
+                    string currentToken = tokensQueue.front();
+                    TokenType currentTokenType = ParseToken(currentToken);
+
+                    tokensQueue.pop();
+
+                    switch (currentTokenType)
+                    {
+                        case PUB_EXT:
+                            if (currentSectionType != GLOBAL)
+                            {
+                                throw runtime_error("Not allowed to write public/extern not in GLOBAL section!");
+                            }
+                            if (currentToken == ".public")
+                                return AFTER_PUB;
+                            return AFTER_EXT;
+                        case DIRECTIVE:
+                            if (currentSectionType != DATA)
+                            {
+                                throw runtime_error("Not allowed to write directives not in DATA section!");
+                            }
+                            HandleDirective(currentToken, tokensQueue, offsetCounter, currentSection, true);
+                            return LINE_END;
+                        case SECTION:
+                            currentSection = currentToken;
+                            UpdateCurrentSection(currentToken, currentSectionType, offsetCounter);
+                            return LINE_END;
+                        case INSTRUCTION:
+
+                            HandleInstruction(tokensQueue);
+
+//                            offsetCounter += 4;
+//                            while (!tokensQueue.empty()) tokensQueue.pop();
+                            return LINE_END;
+                        default:
+                            throw runtime_error("Token not allowed here! " + currentTokenType + (" " + currentToken));
+                    }
+                }
+            },
+            {
+                LINE_END, [&](){
+
+                    if (!tokensQueue.empty())
+                    {
+                        throw runtime_error("Expected end of line, but token found! " + tokensQueue.front());
+                    }
+
+                    return END;
+                }
+            },
+            {
+                AFTER_PUB, [&](){
+
+                    if (tokensQueue.empty())
+                        return END;
+
+                    string currentToken = tokensQueue.front();
+                    tokensQueue.pop();
+
+                    TokenType currentTokenType = ParseToken(currentToken);
+                    if (currentTokenType !=  SYMBOL)
+                    {
+                        throw runtime_error("Symbol expected, " + currentToken);
+                    }
+
+                    if (symbols.find(currentToken) == symbols.end())
+                    {
+                        throw runtime_error("Symbol defined public, but not found " + currentToken);
+                    }
+
+                    symbols[currentToken].scope = Symbol::ScopeType::GLOBAL;
+
+                    return AFTER_PUB;
+                }
+            },
+            {
+                AFTER_EXT, [&](){
+
+                    if (tokensQueue.empty())
+                        return END;
+
+                    string currentToken = tokensQueue.front();
+                    tokensQueue.pop();
+
+                    TokenType currentTokenType = ParseToken(currentToken);
+                    if (currentTokenType !=  SYMBOL)
+                    {
+                        throw runtime_error("Symbol expected, " + currentToken);
+                    }
+
+                    AddNewSymbol(currentToken, false, currentSectionType, currentSection, Symbol::ScopeType::GLOBAL, offsetCounter);
+
+                    return AFTER_EXT;
+                }
+            },
+        };
+
+    for (auto &tokens: assemblyInput)
+    {
+        for (auto &token: tokens)
+        {
+            tokensQueue.push(token);
+        }
+
+        currentState = LINE_BEGIN;
+
+        while (currentState != END)
+        {
+            outputFile << "current state " << currentState << endl;
+            outputFile << "current counter " << offsetCounter << endl;
+            if (!tokensQueue.empty())
+            {
+                outputFile << "current token type " << ParseToken(tokensQueue.front()) << endl;
+                outputFile << "current token " << tokensQueue.front() << endl;
+
+            }
+            else
+            {
+                outputFile << "empty tokensqueue" << endl;
+            }
+
+            outputFile << endl;
+
+            outputFile.flush();
+
             currentState = stateMachine[currentState]();
         }
     }
@@ -650,8 +1022,8 @@ void Compiler::FirstRun()
 //}
 
 
-void Compiler::SecondRun()
-{
+//void Compiler::SecondRun(ofstream& outputFile)
+//{
 //    if (sectionType == "public" || sectionType == "extern")
 //    {
 //        if (currentSectionType != GLOBAL)
@@ -677,22 +1049,30 @@ void Compiler::SecondRun()
 //            symbols[tokens[wordNum]] = sym;
 //        }
 //    }
-}
+//}
 
 
 void Compiler::WriteObjectFile(ofstream& outputFile)
 {
-    cout << "Writing object" << endl;
+
+    outputFile << "Writing object" << endl;
 
     //typedef std::map<std::string, std::map<std::string, std::string>>::iterator it_type;
     for(auto iterator = symbols.begin(); iterator != symbols.end(); iterator++)
     {
-        cout << (iterator->second);
+        Symbol &symbol = (iterator->second);
+
+        outputFile << "Symbol: " << symbol.name << endl;
+        outputFile << "\tDefined:\t" << (symbol.defined?"true":"false") << endl;
+        outputFile << "\tSection:\t" << symbol.section << endl;
+        outputFile << "\tSectionName:\t" << symbol.sectionName << endl;
+        outputFile << "\toffset:\t" << symbol.offset << endl;
+        outputFile << "\tType:\t" << symbol.scope << endl;
     }
 
     for (int i = 0; i < instructions.size() ; i++)
     {
-        cout << *(instructions[i]);
+        outputFile << (instructions[i]);
     }
 
 }

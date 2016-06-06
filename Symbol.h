@@ -20,12 +20,13 @@ public:
 
     friend ostream &operator<<(ostream &, Symbol &);
 
-    Symbol(string _name = "", bool _defined = false, SectionType _section = SectionType::GLOBAL, ScopeType _scope = ScopeType::LOCAL, unsigned long _offset = 0);
+    Symbol(string _name = "", bool _defined = false, SectionType _section = SectionType::GLOBAL, string _sectionName = "global", ScopeType _scope = ScopeType::LOCAL, unsigned long _offset = 0);
 
     string name;
     bool defined;
     unsigned long offset;
     SectionType section;
+    string sectionName;
     ScopeType scope;
 
 };

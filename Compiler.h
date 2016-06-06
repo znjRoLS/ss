@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <queue>
 
 using namespace std;
 
@@ -28,16 +29,21 @@ public:
 private:
 
     void LoadAssemblyFromFile(ifstream& inputFile);
-    void FirstRun();
-    void SecondRun();
+    void FirstRun(ofstream&);
+    void SecondRun(ofstream&);
     void WriteObjectFile(ofstream& outputFile);
 
-    void AddNewSymbol(string symName, bool symDefined, SectionType symSection, Symbol::ScopeType symScope, u_int32_t locationCounter);
+    void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory);
+    void AddNewSymbol(string symName, bool symDefined, SectionType symSection,string,  Symbol::ScopeType symScope, u_int32_t locationCounter);
+    void HandleInstruction(queue<string>&);
+    void FillBinaryCodeInstruction(Instruction&, queue<string>&);
 
     unordered_map<string, Symbol> symbols;
-    vector<Instruction*> instructions;
+    vector<Instruction> instructions;
 
     vector<vector<string> > assemblyInput;
+
+    unordered_map<string, u_int8_t*> sections;
 
 
 };
