@@ -27,8 +27,6 @@ public:
 
 private:
 
-    static unordered_map<string, function<void()> > sectionProcessFunctions;
-
     void LoadAssemblyFromFile(ifstream& inputFile);
     void FirstRun();
     void SecondRun();

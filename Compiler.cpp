@@ -18,12 +18,13 @@
 #include "Compiler.h"
 
 
-enum State {LINE_BEGIN, END, AFTER_PUB_EXT, AFTER_SECTION, AFTER_DIRECTIVE, AFTER_LABEL};
 
-//unordered_map<string, function<void()> > Compiler::sectionProcessFunctions =
+//unordered_map<int, function<int()> > sectionProcessFunctions =
 //    {
-//        {"public", [](Compiler& compiler, string sectionName, SectionType sectionType, u_int32_t locationCounter) {
-//
+//        {4, [&]() {
+//            int k = 5;
+//            k += 4;
+//            return k;
 //        }}
 //    };
 
@@ -50,7 +51,7 @@ ostream& operator<<(ostream& out, Symbol& symbol)
     out << "Symbol: " << symbol.name << endl;
     out << "\tDefined:\t" << symbol.defined << endl;
     out << "\tSection:\t" << symbol.section << endl;
-    out << "\tVA:\t" << symbol.VA << endl;
+    out << "\toffset:\t" << symbol.offset << endl;
     out << "\tType:\t" << symbol.scope << endl;
 
     return out;
@@ -176,7 +177,7 @@ void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
 //            if (currentSectionType == GLOBAL)
 //            {
 //                cout << "Error, global section" << endl;
-//                throw "rand err";
+//                throw runtime_error("rand err";
 //            }
 //
 //            if (tokens[wordNum][tokens[0].size() - 1] == ':')
@@ -214,7 +215,7 @@ void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
 //                    if (tokens[wordNum][0] != '.')
 //                    {
 //                        cout << "Error in parsing" << endl;
-//                        throw "random";
+//                        throw runtime_error("random";
 //                    }
 //
 //                    if (tokens[wordNum] == ".char")
@@ -270,7 +271,7 @@ void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
 ////                            if (instructionsTable.find(tokens[wordNum]) == instructionsTable.end())
 ////                            {
 ////                                cout << "Instruction not supported" << endl;
-////                                throw "rand";
+////                                throw runtime_error("rand";
 ////                            }
 ////
 ////                            currentInstruction = new Instruction(*instructionsTable[tokens[wordNum]]);
@@ -333,16 +334,18 @@ void Compiler::LoadAssemblyFromFile(ifstream &inputFile)
 //if (base_match[1] == "ldc")
 //{
 
+enum State {LINE_BEGIN, END, AFTER_PUB_EXT, AFTER_SECTION, AFTER_DIRECTIVE, AFTER_LABEL, LINE_END};
+
 enum TokenType {PUB_EXT, LABEL, SECTION, DIRECTIVE, INSTRUCTION, OPERAND_REG, OPERAND_DEC, OPERAND_HEX, ILLEGAL};
 
-unordered_map<TokenType, regex> tokenParsers =
+unordered_map<int, regex> tokenParsers =
     {
         { PUB_EXT, regex("^(.public|.extern)$")},
         { LABEL, regex("^([a-zA-Z_][a-zA-Z0-9]*:)$")},
-        { SECTION, regex("^.(text|data|bss)[.([a-zA-Z_][a-zA-Z0-9]*)]$")},
+        { SECTION, regex("^.(text|data|bss)(.[a-zA-Z_][a-zA-Z0-9]*)?$")},
         { DIRECTIVE, regex("^.(char|word|long|align|skip)$")},
-        { INSTRUCTION, regex("^[a-zA-Z]*)$")},
-        { OPERAND_REG, regex("^r[0-9]{1,2})$")},
+        { INSTRUCTION, regex("^[a-zA-Z]*$")},
+        { OPERAND_REG, regex("^r([0-9]{1,2})$")},
         { OPERAND_DEC, regex("^([0-9]*)$")},
         { OPERAND_HEX, regex("^(0x[0-9]*)$")},
     };
@@ -353,7 +356,7 @@ TokenType ParseToken(string token)
     {
         if (regex_match(token, parseRule.second))
         {
-            return parseRule.first;
+            return (TokenType)parseRule.first;
         }
     }
 
@@ -373,6 +376,37 @@ void UpdateCurrentSection(string sectioName, SectionType &currentSection)
         currentSection = DATA;
     if (base_match[1] == "bss")
         currentSection = BSS;
+}
+
+
+u_int32_t ParseOperand(string token)
+{
+    smatch base_match;
+
+    u_int32_t ret;
+
+    if (regex_match(token, base_match, tokenParsers[OPERAND_DEC]))
+    {
+        stringstream ss;
+        ss << base_match[1];
+        ss >> ret;
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
+    {
+        stringstream ss;
+        ss << base_match[1];
+        ss >> ret;
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_HEX]))
+    {
+        stringstream ss;
+        ss << base_match[1];
+        ss >> hex >> ret;
+    }
+
+    return ret;
 }
 
 
@@ -404,13 +438,20 @@ void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &loc
         locationCounter += 4;
     }
 
-
     if (directiveName == ".long")
     {
         locationCounter += 4;
     }
 
+    if (directiveName == ".skip")
+    {
+        if (nextTokenType != OPERAND_DEC & nextTokenType != OPERAND_HEX)
+        {
+            throw runtime_error("Bad token after skip");
+        }
 
+        locationCounter += ParseOperand(nextToken);
+    }
 
 
 }
@@ -420,7 +461,7 @@ void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSect
 {
     if (symbols.find(symName) != symbols.end())
     {
-        throw "Error, symbol already defined ! " + symName;
+        throw runtime_error("Error, symbol already defined ! " + symName);
     }
 
     Symbol sym(symName, symDefined, symSection, symScope, locationCounter);
@@ -435,10 +476,10 @@ void Compiler::FirstRun()
     SectionType currentSectionType;
     State currentState;
 
-    unordered_map<State, function<State>() > stateMachine =
+    unordered_map<int, function<State()> > stateMachine =
         {
             {
-                LINE_BEGIN, [](){
+                LINE_BEGIN, [&] {
                     //tokensQueue.empty will never be true ?
 
                     string currentToken = tokensQueue.front();
@@ -456,25 +497,56 @@ void Compiler::FirstRun()
                 }
             },
             {
-                AFTER_LABEL, [](){
+                AFTER_LABEL, [&](){
 
-                    string currentToken = tokensQueue.front();
-                    TokenType currentTokenType = ParseToken(currentToken);
+                if (tokensQueue.empty())
+                {
+                    return END;
+                }
 
-                    tokensQueue.pop();
+                string currentToken = tokensQueue.front();
+                TokenType currentTokenType = ParseToken(currentToken);
 
-                    switch (currentTokenType)
+                tokensQueue.pop();
+
+                switch (currentTokenType)
+                {
+                    case PUB_EXT:
+                        if (currentSectionType != GLOBAL)
+                        {
+                            throw runtime_error("Not allowed to write public/extern not in GLOBAL section!");
+                        }
+                        while (!tokensQueue.empty()) tokensQueue.pop();
+                        return LINE_END;
+                    case DIRECTIVE:
+                        if (currentSectionType != DATA)
+                        {
+                            throw runtime_error("Not allowed to write directives not in DATA section!");
+                        }
+                        HandleDirective(currentToken, tokensQueue, locationCounter);
+                        return LINE_END;
+                    case SECTION:
+                        UpdateCurrentSection(currentToken, currentSectionType);
+                        AddNewSymbol(currentToken, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter);
+                        return LINE_END;
+                    case INSTRUCTION:
+                        locationCounter += 4;
+                        while (!tokensQueue.empty()) tokensQueue.pop();
+                        return LINE_END;
+                    default:
+                        throw runtime_error("Token not allowed here! " + currentTokenType + (" " + currentToken));
+                }
+            }
+            },
+                {
+                    LINE_END, [&](){
+
+                    if (!tokensQueue.empty())
                     {
-                        case PUB_EXT:
-                            return AFTER_PUB_EXT;
-                        case DIRECTIVE:
-                            HandleDirective(currentToken, tokensQueue, locationCounter);
-                            return AFTER_DIRECTIVE;
-                        case SECTION:
-                            UpdateCurrentSection(currentToken, currentSectionType);
-                            AddNewSymbol(currentToken, true, currentSectionType, Symbol::ScopeType::LOCAL, locationCounter)
-                            return AFTER_SECTION;
+                        throw runtime_error("Expected end of line, but token found! " + tokensQueue.front());
                     }
+
+                    return END;
                 }
             },
         };
@@ -585,7 +657,7 @@ void Compiler::SecondRun()
 //        if (currentSectionType != GLOBAL)
 //        {
 //            cout << "Please write public and extern declarations at the begining of the file" << endl;
-//            throw "random err";
+//            throw runtime_error("random err";
 //        }
 //
 //        for (int wordNum = 1; wordNum < tokens.size(); wordNum ++)
@@ -593,7 +665,7 @@ void Compiler::SecondRun()
 //            if (symbols.find(tokens[wordNum]) != symbols.end())
 //            {
 //                cout << "Already defined symbol " << tokens[wordNum] << endl;
-//                throw "rando";
+//                throw runtime_error("rando";
 //            }
 //
 //            Symbol sym;
