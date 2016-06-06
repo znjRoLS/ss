@@ -114,8 +114,11 @@ void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
     cout << "Compiling " << endl;
 
     LoadAssemblyFromFile(inputFile);
+    cout << "FirstRun " << endl;
     FirstRun(outputFile);
+    cout << "SecondRun " << endl;
     SecondRun(outputFile);
+    cout << "output " << endl;
     WriteObjectFile(outputFile);
 
 }
@@ -203,11 +206,18 @@ unordered_map<int, regex> tokenParsers =
 TokenType ParseToken(string token)
 {
     TokenType ret = ILLEGAL;
+
+    if (regex_match(token, tokenParsers[SYMBOL]))
+        ret = SYMBOL;
+
     for (auto &parseRule: tokenParsers)
     {
+        if (parseRule.first == SYMBOL)
+            continue;
+
         if (regex_match(token, parseRule.second))
         {
-            if (ret == ILLEGAL)
+            if (ret == ILLEGAL || ret == SYMBOL)
             {
                 ret = (TokenType)parseRule.first;
             }
@@ -239,6 +249,14 @@ void UpdateCurrentSection(string sectionName, SectionType &currentSection, u_int
         currentSection = BSS;
 }
 
+unordered_map<string, u_int32_t> specialRegisterValues =
+    {
+        {"pc", 16},
+        {"sp", 17},
+        {"lr", 18},
+        {"psw", 19}
+    };
+
 
 u_int32_t ParseOperand(string token, int immSize = 0)
 {
@@ -246,14 +264,8 @@ u_int32_t ParseOperand(string token, int immSize = 0)
     bool isReg = false;
     u_int32_t ret;
 
-    if (regex_match(token, base_match, tokenParsers[OPERAND_DEC]))
-    {
-        stringstream ss;
-        ss << base_match[1];
-        ss >> ret;
-    }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
+    if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
     {
         isReg = true;
         stringstream ss;
@@ -261,11 +273,38 @@ u_int32_t ParseOperand(string token, int immSize = 0)
         ss >> ret;
     }
 
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGINCDEC]))
+    {
+        isReg = true;
+        stringstream ss;
+        ss << base_match[1];
+        ss >> ret;
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGSPEC]))
+    {
+        isReg = true;
+        ret = specialRegisterValues[base_match[1]];
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGSPECINCDEC]))
+    {
+        isReg = true;
+        ret = specialRegisterValues[base_match[1]];
+    }
+
     else if (regex_match(token, base_match, tokenParsers[OPERAND_HEX]))
     {
         stringstream ss;
         ss << base_match[1];
         ss >> hex >> ret;
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[OPERAND_DEC]))
+    {
+        stringstream ss;
+        ss << base_match[1];
+        ss >> ret;
     }
 
     if (!isReg && immSize != 0)
@@ -342,18 +381,6 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
     delete binVal;
 }
 
-
-void Compiler::FillBinaryCodeInstruction(Instruction &instruction, queue<string> &tokens)
-{
-    string instructionName = instruction.name;
-    string condition = instruction.condition;
-    bool setFlags = instruction.setFlags;
-
-
-}
-
-
-
 unordered_map<string, u_int8_t> instructionCodes =
     {
         {"int",  0},
@@ -405,7 +432,7 @@ void GetOperand(queue<string> &tokens, string &token, u_int32_t &operand, TokenT
 
     if (find(operandAllowed.begin(), operandAllowed.end(), operandType) == operandAllowed.end())
     {
-        throw runtime_error("Illegal token, expected operand: " + token);
+        throw runtime_error("Illegal token: " + token);
     }
 
     operand = ParseOperand(token, operandImmSize);
@@ -510,10 +537,18 @@ unordered_map<int, function<void(Instruction&, queue<string>&)> > instructionsHa
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
                 instr.instrCode.instruction_logical.dst = operand;
 
-                if ()
+                if (operandType == OPERAND_REGSPEC && token != "sp")
+                {
+                    throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
+                }
 
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
                 instr.instrCode.instruction_logical.src = operand;
+
+                if (operandType == OPERAND_REGSPEC && token != "sp")
+                {
+                    throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
+                }
             }
         },
         {LOADSTORE, [](Instruction &instr, queue<string> &tokens) {
@@ -525,89 +560,117 @@ unordered_map<int, function<void(Instruction&, queue<string>&)> > instructionsHa
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
                 instr.instrCode.instruction_ldr_str.r = operand;
 
-                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC})
-
-
-                bool isPost, isInc, isAny = true;
-
-                if (nextToken[0] == '+' || nextToken[0] == '-')
+                if (token == "psw")
                 {
-                    isPost = false;
-                    isInc = (nextToken[0] == '+');
-                }
-                else if (nextToken[nextToken.size()-1] == '+' || nextToken[nextToken.size()-1] == '-')
-                {
-                    isPost = true;
-                    isInc = (nextToken[nextToken.size()-1] == '+');
-                }
-                else
-                {
-                    isAny = false;
+                    throw runtime_error("Not allowed to use psw in ldr and str");
                 }
 
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC, OPERAND_REGSPEC, OPERAND_REGSPECINCDEC});
+                instr.instrCode.instruction_ldr_str.a = operand;
 
-                GetOperand(tokens, operand, operandType, {OPERAND_REG});
-                instr.instrCode.instruction_logical.src = operand;
+                bool isIncDec = (operandType == OPERAND_REGINCDEC || operandType == OPERAND_REGSPECINCDEC);
+                bool isPost, isInc;
+                u_int32_t f;
+
+                if (isIncDec)
+                {
+                    if (token[0] == '+'){ isPost = false; isInc = true;}
+                    if (token[0] == '-'){ isPost = false; isInc = false;}
+                    if (token[token.size()-1] == '+'){ isPost = true; isInc = true;}
+                    if (token[token.size()-1] == '-'){ isPost = true; isInc = false;}
+                }
+
+                if (isIncDec && token == "pc")
+                {
+                    throw runtime_error("Not allowed to inc/dec pc register");
+                }
+
+                f = (token == "pc")?0:1;
+
+                if (isIncDec)
+                {
+                    f <<= 1;
+                    if (!isPost)
+                        f <<= 1;
+                    if (!isInc)
+                        f ++;
+                }
+
+                instr.instrCode.instruction_ldr_str.f = f;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 10);
+                instr.instrCode.instruction_ldr_str.imm = operand;
             }
         },
         {CALL, [](Instruction &instr, queue<string> &tokens) {
 
-            u_int32_t operand;
-            TokenType operandType;
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.dst = operand;
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_call.dst = operand;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.src = operand;
-        }
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 19);
+                instr.instrCode.instruction_call.imm = operand;
+            }
         },
         {IO, [](Instruction &instr, queue<string> &tokens) {
 
+            string token;
             u_int32_t operand;
             TokenType operandType;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.dst = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_in_out.dst = operand;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.src = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_in_out.src = operand;
+
+            instr.instrCode.instruction_in_out.io = (instr.name == "in")?1:0;
         }
         },
         {MOVSHIFT, [](Instruction &instr, queue<string> &tokens) {
 
+            string token;
             u_int32_t operand;
             TokenType operandType;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.dst = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+            instr.instrCode.instruction_mov_shr_shl.dst = operand;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.src = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+            instr.instrCode.instruction_mov_shr_shl.src = operand;
+
+            if (instr.name != "mov")
+            {
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 0); // 0 or 6 ? because unsigned 5, TODO@rols: check this
+                instr.instrCode.instruction_mov_shr_shl.imm = operand;
+
+                instr.instrCode.instruction_mov_shr_shl.lr = (instr.name == "shl")?1:0;
+            }
         }
         },
         {LOADC, [](Instruction &instr, queue<string> &tokens) {
 
+            string token;
             u_int32_t operand;
             TokenType operandType;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.dst = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+            instr.instrCode.instruction_ldch_ldcl.dst = operand;
 
-            GetOperand(tokens, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_logical.src = operand;
+            GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 16);
+            instr.instrCode.instruction_ldch_ldcl.c = operand;
+
+            instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
         }
         },
     };
 
-void Compiler::HandleInstruction(queue<string> &tokens )
+void Compiler::HandleInstruction(string instructionName, queue<string> &tokens, u_int32_t &locationCounter)
 {
-    string instructionName = tokens.front();
-    tokens.pop();
-
     smatch base_match;
-
-
 
     if (regex_match(instructionName, base_match, tokenParsers[INSTRUCTION])) {
 
@@ -630,17 +693,9 @@ void Compiler::HandleInstruction(queue<string> &tokens )
 
         instructionsHandlers[instructionType](instruction, tokens);
 
-        Instruction instr(shortInstructionName, condition, setFlags);
+        instructions.push_back(instruction);
 
-        FillBinaryCodeInstruction(instr, tokens);
-
-//        Instruction instr(shortInstructionName, condition, setFlags);
-//
-//        instr->instrCode = GetBinaryFromInstruction(base_match[1], base_match[2], base_match[3], parameters);
-        //currentVA += 4;
-
-        instructions.push_back(instr);
-
+        locationCounter += 4;
     }
 }
 
@@ -786,6 +841,8 @@ void Compiler::SecondRun(ofstream& outputFile)
     string currentSection = "global";
     State currentState;
 
+    outputFile << "HEJ" << endl;
+
     unordered_map<int, function<State()> > stateMachine =
         {
             {
@@ -811,6 +868,7 @@ void Compiler::SecondRun(ofstream& outputFile)
                     }
 
                     string currentToken = tokensQueue.front();
+                    //cout << "currentToken " << currentToken << " tokensqueue " << tokensQueue.front() << endl;
                     TokenType currentTokenType = ParseToken(currentToken);
 
                     tokensQueue.pop();
@@ -838,7 +896,7 @@ void Compiler::SecondRun(ofstream& outputFile)
                             return LINE_END;
                         case INSTRUCTION:
 
-                            HandleInstruction(tokensQueue);
+                            HandleInstruction(currentToken, tokensQueue, offsetCounter);
 
 //                            offsetCounter += 4;
 //                            while (!tokensQueue.empty()) tokensQueue.pop();
@@ -939,117 +997,6 @@ void Compiler::SecondRun(ofstream& outputFile)
     }
 
 }
-
-
-//void Compiler::FirstRun()
-//{
-//    u_int32_t locationCounter = 0;
-//
-//    string currentSection;
-//    SectionType currentSectionType = GLOBAL;
-//
-//    for (auto &tokens: assemblyInput)
-//    {
-//
-//
-//        if (tokens[0][0] == '.') // section
-//        {
-//            string sectionName = tokens[0].substr(1, tokens[0].size() - 1);
-//
-//            string sectionType = sectionName;
-//
-//            size_t found = sectionType.find('.');
-//            if (found != string::npos)
-//            {
-//                sectionType = sectionType.substr(0,found);
-//            }
-//
-//            if (sectionType == "text" || sectionType == "data" || sectionType == "bss")
-//            {
-//                //.text .data .bss
-//                //currentSection = tokens[0];
-//
-//                if (sectionType == "text")
-//                    currentSectionType = TEXT;
-//                if (sectionType == "data")
-//                    currentSectionType = DATA;
-//                if (sectionType == "bss")
-//                    currentSectionType = BSS;
-//
-//                Symbol sym;
-//
-//                sym.name = sectionName;
-//                sym.defined = true;
-//                sym.scope = Symbol::ScopeType::LOCAL;
-//                sym.VA = locationCounter;
-//
-//                symbols[sectionType] = sym;
-//            }
-//
-//            continue;
-//        }
-//
-//        int wordNum = 0;
-//
-//        if (tokens[0][tokens[0].size()-1] == ':')
-//        {
-//            //label
-//
-//            string labelName = tokens[0].substr(0,tokens[0].size() - 1);
-//
-//            Symbol sym;
-//
-//            if (symbols.find(labelName) != symbols.end())
-//            {
-//                sym = symbols[labelName];
-//            }
-//
-//            sym.name = labelName;
-//            sym.VA = locationCounter;
-//            sym.section = currentSectionType;
-//            sym.defined = true;
-//
-//            symbols[labelName] = sym;
-//
-//            wordNum ++;
-//        }
-//
-//        for (; wordNum < tokens.size(); wordNum ++)
-//        {
-//            if ()
-//        }
-//    }
-//}
-
-
-//void Compiler::SecondRun(ofstream& outputFile)
-//{
-//    if (sectionType == "public" || sectionType == "extern")
-//    {
-//        if (currentSectionType != GLOBAL)
-//        {
-//            cout << "Please write public and extern declarations at the begining of the file" << endl;
-//            throw runtime_error("random err";
-//        }
-//
-//        for (int wordNum = 1; wordNum < tokens.size(); wordNum ++)
-//        {
-//            if (symbols.find(tokens[wordNum]) != symbols.end())
-//            {
-//                cout << "Already defined symbol " << tokens[wordNum] << endl;
-//                throw runtime_error("rando";
-//            }
-//
-//            Symbol sym;
-//
-//            sym.name = sectionName;
-//            sym.defined = tokens[0][1] == 'e';
-//            sym.scope = Symbol::ScopeType::GLOBAL;
-//
-//            symbols[tokens[wordNum]] = sym;
-//        }
-//    }
-//}
 
 
 void Compiler::WriteObjectFile(ofstream& outputFile)

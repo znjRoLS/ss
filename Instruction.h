@@ -55,6 +55,10 @@ public:
             u_int32_t instr:8, dst:4, hl:1, :3, c:16;
         } instruction_ldch_ldcl;
 
+        struct {
+            u_int32_t byte0:8,byte1:8, byte2:8, byte3:8;
+        } bytes;
+
         u_int32_t binaryCode;
 
     } instrCode;

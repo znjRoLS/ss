@@ -35,8 +35,7 @@ private:
 
     void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory);
     void AddNewSymbol(string symName, bool symDefined, SectionType symSection,string,  Symbol::ScopeType symScope, u_int32_t locationCounter);
-    void HandleInstruction(queue<string>&);
-    void FillBinaryCodeInstruction(Instruction&, queue<string>&);
+    void HandleInstruction(string, queue<string>&, u_int32_t&);
 
     unordered_map<string, Symbol> symbols;
     vector<Instruction> instructions;
