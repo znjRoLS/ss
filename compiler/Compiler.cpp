@@ -18,7 +18,7 @@
 #include "Instruction.h"
 
 
-ofstream Compiler::logFile("../../log");
+ofstream Compiler::logFile("compiler/log");
 
 ostream& operator<<(ostream& out, TokenType s);
 ostream& operator<<(ostream& out, State s);

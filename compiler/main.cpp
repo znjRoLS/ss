@@ -12,7 +12,7 @@ int main(int argc, char ** argv) {
 
     if (argc < 3)
     {
-        cout << "Please call this program as ./program inputfile outputfile" << endl;
+        cout << "Please call this program as ./compiler inputfile outputfile" << endl;
         return 1;
     }
 
@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    if (!inputFile.is_open())
+    if (!outputFile.is_open())
     {
         cerr << "Error openning output file" << endl;
         return 1;
