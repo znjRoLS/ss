@@ -41,6 +41,7 @@ ostream& operator<<(ostream& out, TokenType s)
         case TokenType::OPERAND_DEC: return out << "OPERAND_DEC";
         case TokenType::OPERAND_HEX: return out << "OPERAND_HEX";
         case TokenType::ILLEGAL: return out << "ILLEGAL";
+        case TokenType::SYMBOLDIFF: return out << "SYMBOLDIFF";
     }
 }
 

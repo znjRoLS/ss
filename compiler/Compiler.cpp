@@ -109,7 +109,8 @@ unordered_map<int, regex> Compiler::tokenParsers =
         { OPERAND_REGSPECINCDEC, regex("^(?:(?:(?:\\+\\+|--)(pc|sp|lr|psw))|(?:(pc|sp|lr|psw)(?:\\+\\+|--)))$")},
         { OPERAND_DEC, regex("^([0-9]*)$")},
         { OPERAND_HEX, regex("^(0x[0-9abcdef]*)$")},
-        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$")}
+        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
+        { SYMBOLDIFF, regex("^([a-zA-Z_][a-zA-Z0-9]*)-([a-zA-Z_][a-zA-Z0-9]*)$")}
     };
 
 Compiler::Compiler()
@@ -121,7 +122,7 @@ Compiler::Compiler()
                 string token;
                 u_int32_t operand;
                 TokenType operandType;
-                GetOperand(tokens, token, operand, operandType, {OPERAND_HEX, OPERAND_DEC}, 4);
+                GetOperand(tokens, token, operand, operandType, {OPERAND_HEX, OPERAND_DEC, SYMBOLDIFF}, 4);
 
                 instr.instrCode.instruction_int.src = operand;
             }
@@ -150,7 +151,7 @@ Compiler::Compiler()
                 string token2;
                 u_int32_t operand2;
                 TokenType operandType2;
-                GetOperand(tokens, token2, operand2, operandType2, {OPERAND_REG, OPERAND_HEX, OPERAND_DEC}, 18);
+                GetOperand(tokens, token2, operand2, operandType2, {OPERAND_REG, OPERAND_HEX, OPERAND_DEC, SYMBOLDIFF}, 18);
 
                 if (operandType2 == OPERAND_REG || operandType2 == OPERAND_REGSPEC)
                 {
@@ -247,7 +248,7 @@ Compiler::Compiler()
 
                 instr.instrCode.instruction_ldr_str.f = f;
 
-                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 10);
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 10);
                 instr.instrCode.instruction_ldr_str.imm = operand;
             }
             },
@@ -260,7 +261,7 @@ Compiler::Compiler()
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
                 instr.instrCode.instruction_call.dst = operand;
 
-                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 19);
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 19);
                 instr.instrCode.instruction_call.imm = operand;
             }
             },
@@ -293,7 +294,7 @@ Compiler::Compiler()
 
                 if (instr.name != "mov")
                 {
-                    GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 0); // 0 or 6 ? because unsigned 5, TODO@rols: check this
+                    GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 0); // 0 or 6 ? because unsigned 5, TODO@rols: check this
                     instr.instrCode.instruction_mov_shr_shl.imm = operand;
 
                     instr.instrCode.instruction_mov_shr_shl.lr = (instr.name == "shl")?1:0;
@@ -309,7 +310,7 @@ Compiler::Compiler()
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
                 instr.instrCode.instruction_ldch_ldcl.dst = operand;
 
-                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 16);
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 16);
                 instr.instrCode.instruction_ldch_ldcl.c = operand;
 
                 instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
@@ -805,6 +806,32 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
         stringstream ss;
         ss << base_match[1];
         ss >> ret;
+    }
+
+    else if (regex_match(token, base_match, tokenParsers[SYMBOLDIFF]))
+    {
+        string symbol1 = base_match[1];
+        string symbol2 = base_match[2];
+
+        auto symbol1Pair = symbols.find(symbol1);
+        auto symbol2Pair = symbols.find(symbol2);
+
+        if (symbol1Pair == symbols.end())
+        {
+            throw new runtime_error("Symbol not defined " + symbol1);
+        }
+        if (symbol2Pair == symbols.end())
+        {
+            throw new runtime_error("Symbol not defined " + symbol2);
+        }
+
+        if (symbol1Pair->second.sectionName != symbol2Pair->second.sectionName)
+        {
+            throw new runtime_error("Symbols not from same sections " + symbol1 + " " + symbol2);
+        }
+
+        ret = symbol1Pair->second.offset - symbol2Pair->second.offset;
+
     }
 
     if (!isReg && immSize != 0)
