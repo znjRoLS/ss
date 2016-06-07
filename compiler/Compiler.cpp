@@ -85,208 +85,7 @@ unordered_map<string, int> Compiler::instructionTypesMap =
     };
 
 
-unordered_map<int, function<void(Instruction&, queue<string>&)> > Compiler::instructionsHandlers =
-    {
-        {INT, [](Instruction &instr, queue<string> &tokens) {
 
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-            GetOperand(tokens, token, operand, operandType, {OPERAND_HEX, OPERAND_DEC}, 4);
-
-            instr.instrCode.instruction_int.src = operand;
-        }
-        },
-        {ARITHMETIC, [](Instruction &instr, queue<string> &tokens) {
-
-            string token1;
-            u_int32_t operand1;
-            TokenType operandType1;
-            GetOperand(tokens, token1, operand1, operandType1, {OPERAND_REG, OPERAND_REGSPEC});
-
-            bool addsub = true;
-            if (instr.name == "mul" || instr.name == "div" || instr.name == "cmp")
-                addsub = false;
-
-            if (!addsub && operandType1 == OPERAND_REGSPEC)
-            {
-                throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
-            }
-
-            if (token1 == "psw")
-            {
-                throw runtime_error("Not allowed to use psw in add or sub");
-            }
-
-            string token2;
-            u_int32_t operand2;
-            TokenType operandType2;
-            GetOperand(tokens, token2, operand2, operandType2, {OPERAND_REG, OPERAND_HEX, OPERAND_DEC}, 18);
-
-            if (operandType2 == OPERAND_REG || operandType2 == OPERAND_REGSPEC)
-            {
-                if (!addsub && operandType2 == OPERAND_REGSPEC)
-                {
-                    throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
-                }
-
-                if (token2 == "psw")
-                {
-                    throw runtime_error("Not allowed to use psw in add or sub");
-                }
-
-                instr.instrCode.instruction_arithmetic_reg.dst = operand1;
-                instr.instrCode.instruction_arithmetic_reg.src = operand2;
-                instr.instrCode.instruction_arithmetic_reg.addr = 0;
-            }
-            else
-            {
-                instr.instrCode.instruction_arithmetic_imm.dst = operand1;
-                instr.instrCode.instruction_arithmetic_imm.imm = operand2;
-                instr.instrCode.instruction_arithmetic_imm.addr = 1;
-            }
-
-        }
-        },
-        {LOGICAL, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
-            instr.instrCode.instruction_logical.dst = operand;
-
-            if (operandType == OPERAND_REGSPEC && token != "sp")
-            {
-                throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
-            }
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
-            instr.instrCode.instruction_logical.src = operand;
-
-            if (operandType == OPERAND_REGSPEC && token != "sp")
-            {
-                throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
-            }
-        }
-        },
-        {LOADSTORE, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_ldr_str.r = operand;
-
-            if (token == "psw")
-            {
-                throw runtime_error("Not allowed to use psw in ldr and str");
-            }
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC, OPERAND_REGSPEC, OPERAND_REGSPECINCDEC});
-            instr.instrCode.instruction_ldr_str.a = operand;
-
-            bool isIncDec = (operandType == OPERAND_REGINCDEC || operandType == OPERAND_REGSPECINCDEC);
-            bool isPost, isInc;
-            u_int32_t f;
-
-            if (isIncDec)
-            {
-                if (token[0] == '+'){ isPost = false; isInc = true;}
-                if (token[0] == '-'){ isPost = false; isInc = false;}
-                if (token[token.size()-1] == '+'){ isPost = true; isInc = true;}
-                if (token[token.size()-1] == '-'){ isPost = true; isInc = false;}
-            }
-
-            if (isIncDec && token == "pc")
-            {
-                throw runtime_error("Not allowed to inc/dec pc register");
-            }
-
-            f = (token == "pc")?0:1;
-
-            if (isIncDec)
-            {
-                f <<= 1;
-                if (!isPost)
-                    f <<= 1;
-                if (!isInc)
-                    f ++;
-            }
-
-            instr.instrCode.instruction_ldr_str.f = f;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 10);
-            instr.instrCode.instruction_ldr_str.imm = operand;
-        }
-        },
-        {CALL, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
-            instr.instrCode.instruction_call.dst = operand;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 19);
-            instr.instrCode.instruction_call.imm = operand;
-        }
-        },
-        {IO, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_in_out.dst = operand;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_in_out.src = operand;
-
-            instr.instrCode.instruction_in_out.io = (instr.name == "in")?1:0;
-        }
-        },
-        {MOVSHIFT, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
-            instr.instrCode.instruction_mov_shr_shl.dst = operand;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
-            instr.instrCode.instruction_mov_shr_shl.src = operand;
-
-            if (instr.name != "mov")
-            {
-                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 0); // 0 or 6 ? because unsigned 5, TODO@rols: check this
-                instr.instrCode.instruction_mov_shr_shl.imm = operand;
-
-                instr.instrCode.instruction_mov_shr_shl.lr = (instr.name == "shl")?1:0;
-            }
-        }
-        },
-        {LOADC, [](Instruction &instr, queue<string> &tokens) {
-
-            string token;
-            u_int32_t operand;
-            TokenType operandType;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
-            instr.instrCode.instruction_ldch_ldcl.dst = operand;
-
-            GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 16);
-            instr.instrCode.instruction_ldch_ldcl.c = operand;
-
-            instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
-        }
-        },
-    };
 
 unordered_map<string, u_int32_t> Compiler::specialRegisterValues =
     {
@@ -315,7 +114,208 @@ unordered_map<int, regex> Compiler::tokenParsers =
 
 Compiler::Compiler()
 {
+    instructionsHandlers =
+        {
+            {INT, [&](Instruction &instr, queue<string> &tokens) {
 
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+                GetOperand(tokens, token, operand, operandType, {OPERAND_HEX, OPERAND_DEC}, 4);
+
+                instr.instrCode.instruction_int.src = operand;
+            }
+            },
+            {ARITHMETIC, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token1;
+                u_int32_t operand1;
+                TokenType operandType1;
+                GetOperand(tokens, token1, operand1, operandType1, {OPERAND_REG, OPERAND_REGSPEC});
+
+                bool addsub = true;
+                if (instr.name == "mul" || instr.name == "div" || instr.name == "cmp")
+                    addsub = false;
+
+                if (!addsub && operandType1 == OPERAND_REGSPEC)
+                {
+                    throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
+                }
+
+                if (token1 == "psw")
+                {
+                    throw runtime_error("Not allowed to use psw in add or sub");
+                }
+
+                string token2;
+                u_int32_t operand2;
+                TokenType operandType2;
+                GetOperand(tokens, token2, operand2, operandType2, {OPERAND_REG, OPERAND_HEX, OPERAND_DEC}, 18);
+
+                if (operandType2 == OPERAND_REG || operandType2 == OPERAND_REGSPEC)
+                {
+                    if (!addsub && operandType2 == OPERAND_REGSPEC)
+                    {
+                        throw runtime_error("Not allowed to use pc, lr, sp or psw in mul,div or cmp");
+                    }
+
+                    if (token2 == "psw")
+                    {
+                        throw runtime_error("Not allowed to use psw in add or sub");
+                    }
+
+                    instr.instrCode.instruction_arithmetic_reg.dst = operand1;
+                    instr.instrCode.instruction_arithmetic_reg.src = operand2;
+                    instr.instrCode.instruction_arithmetic_reg.addr = 0;
+                }
+                else
+                {
+                    instr.instrCode.instruction_arithmetic_imm.dst = operand1;
+                    instr.instrCode.instruction_arithmetic_imm.imm = operand2;
+                    instr.instrCode.instruction_arithmetic_imm.addr = 1;
+                }
+
+            }
+            },
+            {LOGICAL, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_logical.dst = operand;
+
+                if (operandType == OPERAND_REGSPEC && token != "sp")
+                {
+                    throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
+                }
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_logical.src = operand;
+
+                if (operandType == OPERAND_REGSPEC && token != "sp")
+                {
+                    throw runtime_error("Not allowed to use pc, lr, psw with and, or, not and test");
+                }
+            }
+            },
+            {LOADSTORE, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_ldr_str.r = operand;
+
+                if (token == "psw")
+                {
+                    throw runtime_error("Not allowed to use psw in ldr and str");
+                }
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC, OPERAND_REGSPEC, OPERAND_REGSPECINCDEC});
+                instr.instrCode.instruction_ldr_str.a = operand;
+
+                bool isIncDec = (operandType == OPERAND_REGINCDEC || operandType == OPERAND_REGSPECINCDEC);
+                bool isPost, isInc;
+                u_int32_t f;
+
+                if (isIncDec)
+                {
+                    if (token[0] == '+'){ isPost = false; isInc = true;}
+                    if (token[0] == '-'){ isPost = false; isInc = false;}
+                    if (token[token.size()-1] == '+'){ isPost = true; isInc = true;}
+                    if (token[token.size()-1] == '-'){ isPost = true; isInc = false;}
+                }
+
+                if (isIncDec && token == "pc")
+                {
+                    throw runtime_error("Not allowed to inc/dec pc register");
+                }
+
+                f = (token == "pc")?0:1;
+
+                if (isIncDec)
+                {
+                    f <<= 1;
+                    if (!isPost)
+                        f <<= 1;
+                    if (!isInc)
+                        f ++;
+                }
+
+                instr.instrCode.instruction_ldr_str.f = f;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 10);
+                instr.instrCode.instruction_ldr_str.imm = operand;
+            }
+            },
+            {CALL, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_call.dst = operand;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 19);
+                instr.instrCode.instruction_call.imm = operand;
+            }
+            },
+            {IO, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_in_out.dst = operand;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_in_out.src = operand;
+
+                instr.instrCode.instruction_in_out.io = (instr.name == "in")?1:0;
+            }
+            },
+            {MOVSHIFT, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_mov_shr_shl.dst = operand;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+                instr.instrCode.instruction_mov_shr_shl.src = operand;
+
+                if (instr.name != "mov")
+                {
+                    GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 0); // 0 or 6 ? because unsigned 5, TODO@rols: check this
+                    instr.instrCode.instruction_mov_shr_shl.imm = operand;
+
+                    instr.instrCode.instruction_mov_shr_shl.lr = (instr.name == "shl")?1:0;
+                }
+            }
+            },
+            {LOADC, [&](Instruction &instr, queue<string> &tokens) {
+
+                string token;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
+                instr.instrCode.instruction_ldch_ldcl.dst = operand;
+
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX}, 16);
+                instr.instrCode.instruction_ldch_ldcl.c = operand;
+
+                instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
+            }
+            },
+        };
 }
 
 
@@ -398,7 +398,7 @@ void Compiler::FirstRun()
     u_int32_t offsetCounter = 0;
     queue<string> tokensQueue;
     SectionType currentSectionType = START;
-    string currentSection = "global";
+    string currentSection = "start";
     State currentState;
 
     unordered_map<int, function<State()> > stateMachine =
@@ -520,7 +520,7 @@ void Compiler::SecondRun()
     u_int32_t offsetCounter = 0;
     queue<string> tokensQueue;
     SectionType currentSectionType = START;
-    string currentSection = "global";
+    string currentSection = "start";
     State currentState;
 
     unordered_map<int, function<State()> > stateMachine =
@@ -764,7 +764,6 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
     smatch base_match;
     bool isReg = false;
     u_int32_t ret;
-
 
     if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
     {

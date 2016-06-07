@@ -38,10 +38,10 @@ private:
     void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory);
     void AddNewSymbol(string symName, bool symDefined, SectionType symSection,string,  ScopeType symScope, u_int32_t locationCounter);
     void HandleInstruction(string, queue<string>&, u_int32_t&);
-    static TokenType ParseToken(string token);
+    TokenType ParseToken(string token);
     void UpdateCurrentSection(string sectionName, SectionType &currentSection, u_int32_t &offsetCounter);
-    static u_int32_t ParseOperand(string token, int immSize = 0);
-    static void GetOperand(queue<string> &tokens, string &token, u_int32_t &operand, TokenType &operandType, vector<TokenType> operandAllowed, int operandImmSize = 0);
+    u_int32_t ParseOperand(string token, int immSize = 0);
+    void GetOperand(queue<string> &tokens, string &token, u_int32_t &operand, TokenType &operandType, vector<TokenType> operandAllowed, int operandImmSize = 0);
 
     unordered_map<string, Symbol> symbols;
     vector<Instruction> instructions;
@@ -53,7 +53,7 @@ private:
     static ofstream logFile;
 
     static unordered_map<int, regex> tokenParsers;
-    static unordered_map<int, function<void(Instruction&, queue<string>&)> > instructionsHandlers;
+    unordered_map<int, function<void(Instruction&, queue<string>&)> > instructionsHandlers;
     static unordered_map<string, u_int8_t> instructionCodes;
     static unordered_map<string, u_int8_t> branchCodes;
     static unordered_map<string, int> instructionTypesMap;
