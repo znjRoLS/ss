@@ -67,16 +67,6 @@ public:
 
     friend ostream &operator<<(ostream &, Instruction &);
 
-    //void SetNextParameter(string param);
-
-    //static unordered_map<string,Instruction*> instructionTable;
-
-    //static Instruction* ParseInstruction(string instructionName, vector<string>& parameters);
-    //static void ParseInstruction(string instructionName, vector<string>& parameters, vector<Instruction*>& instructions, u_int32_t& currentVA);
-
-    //static u_int32_t GetBinaryFromInstruction(string instruction, string condition, string setFlags, vector<string> &parameters);
-
-//    /u_int32_t instrCode;
 
     string name;
     string condition;

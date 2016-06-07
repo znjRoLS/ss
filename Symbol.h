@@ -5,10 +5,10 @@
 #ifndef SS_SYMBOL_H
 #define SS_SYMBOL_H
 
-#include "SectionType.h"
-
 #include <iostream>
 #include <unordered_map>
+
+#include "Enums.h"
 
 using namespace std;
 
@@ -16,11 +16,10 @@ class Symbol
 {
 public:
 
-    enum ScopeType { GLOBAL, LOCAL };
 
     friend ostream &operator<<(ostream &, Symbol &);
 
-    Symbol(string _name = "", bool _defined = false, SectionType _section = SectionType::GLOBAL, string _sectionName = "global", ScopeType _scope = ScopeType::LOCAL, unsigned long _offset = 0);
+    Symbol(string _name, bool _defined, SectionType _section, string _sectionName, ScopeType _scope, unsigned long);
 
     string name;
     bool defined;

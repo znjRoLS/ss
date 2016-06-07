@@ -19,27 +19,23 @@ int main(int argc, char ** argv) {
     ifstream inputFile(argv[1]);
     ofstream outputFile(argv[2]);
 
-    unique_ptr<Compiler> compiler(new Compiler);
+
+    unique_ptr<Compiler> compiler(new Compiler());
 
     if (!inputFile.is_open())
     {
-        cout << "Error openning input file" << endl;
+        cerr << "Error openning input file" << endl;
         return 1;
     }
 
     if (!inputFile.is_open())
     {
-        cout << "Error openning output file" << endl;
+        cerr << "Error openning output file" << endl;
         return 1;
     }
 
-    try {
-        compiler->Compile(inputFile, outputFile);
-    }
-    catch( exception& e)
-    {
-        cout << e.what() << endl;
-    }
+    compiler->Compile(inputFile, outputFile);
+
 
     return 0;
 }
