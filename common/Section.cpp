@@ -34,6 +34,23 @@ void Section::WriteZeros(int pos, int length)
     memset(memory+pos, 0, length);
 }
 
+Section& Section::operator+=(Section& other)
+{
+    int newSize = size + other.size;
+
+    u_int8_t *newMem = new u_int8_t[newSize];
+
+    memcpy(newMem, memory, size);
+    memcpy(newMem + size, other.memory, other.size);
+
+    delete memory;
+    delete other.memory;
+
+    memory = newMem;
+    size = newSize;
+}
+
+
 stringstream Section::Serialize()
 {
     stringstream out;

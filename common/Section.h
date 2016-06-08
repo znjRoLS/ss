@@ -19,6 +19,8 @@ public:
     void Write(void *src, int pos, int length);
     void WriteZeros(int pos, int length);
 
+    Section& operator+=(Section&);
+
     string name;
     int size;
     u_int8_t *memory;

@@ -13,6 +13,7 @@
 #include "Section.h"
 #include "Symbol.h"
 #include "Relocation.h"
+#include "LoaderScriptFile.h"
 
 
 using namespace std;
@@ -20,7 +21,7 @@ using namespace std;
 class Linker {
 
 public:
-    void Link(vector<ifstream> &inputFiles, ofstream &outputFile);
+    void Link(ifstream&, vector<ifstream> &inputFiles, ofstream &outputFile);
 
 private:
     void LoadFile(ifstream &inputFile);
@@ -34,6 +35,14 @@ private:
     unordered_map<string,Section> sections;
     unordered_map<string,Symbol> symbols;
     vector<Relocation> relocations;
+
+    LoaderScriptFile loaderScript;
+
+    void AddSymbol(Symbol&);
+
+    void LoadSymbolsFromScript();
+
+    void GenerateOutput();
 
 
 };

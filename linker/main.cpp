@@ -13,25 +13,32 @@ using namespace std;
 
 int main(int argc, char ** argv) {
 
-    if (argc < 3)
+    if (argc < 4)
     {
-        cout << "Please call this program as ./linker outputfile [inputfiles]+" << endl;
+        cout << "Please call this program as ./linker scriptfile outputfile [inputfiles]+" << endl;
         return 1;
     }
 
-    ofstream outputFile(argv[1]);
+    ifstream loaderFile(argv[1]);
+    ofstream outputFile(argv[2]);
 
     unique_ptr<Linker> linker(new Linker());
 
+    if (!loaderFile.is_open())
+    {
+        cerr << "Error opening loader file" << endl;
+        return 1;
+    }
+
     if (!outputFile.is_open())
     {
-        cerr << "Error openning output file" << endl;
+        cerr << "Error opening output file" << endl;
         return 1;
     }
 
     vector<ifstream> inputFiles;
 
-    for (int i = 2; i < argc; i ++)
+    for (int i = 3; i < argc; i ++)
     {
         inputFiles.push_back(ifstream(argv[i]));
     }
@@ -42,13 +49,13 @@ int main(int argc, char ** argv) {
         if (!inputFile.is_open())
         {
             err = true;
-            cerr << "Error openning input file " << endl;
+            cerr << "Error opening input file " << endl;
         }
     }
 
     if (err) return 1;
 
-    linker->Link(inputFiles, outputFile);
+    linker->Link(loaderFile, inputFiles, outputFile);
 
     return 0;
 }

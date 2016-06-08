@@ -328,21 +328,6 @@ Compiler::~Compiler()
 }
 
 
-void split(const string &s, const char* delim, vector<string> & v){
-    // to avoid modifying original string
-    // first duplicate the original string and return a char pointer then free the memory
-    char * dup = strdup(s.c_str());
-    char * token = strtok(dup, delim);
-    while(token != NULL){
-        v.push_back(string(token));
-        // the call is treated as a subsequent calls to strtok:
-        // the function continues from where it left in previous invocation
-        token = strtok(NULL, delim);
-    }
-    free(dup);
-}
-
-
 
 void Compiler::Compile(ifstream& inputFile, ofstream& outputFile)
 {
@@ -726,14 +711,6 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
     for (auto &symbol:symbols)
     {
         outputFile << symbol.second.Serialize().rdbuf();
-//        outputFile << right <<
-//            setw(15) << "-" <<
-//            setw(15) << symbol.second.name <<
-//            setw(15) << symbol.second.defined <<
-//            setw(15) << symbol.second.sectionName <<
-//            setw(15) << symbol.second.offset <<
-//            setw(15) << symbol.second.scope <<
-//            endl;
     }
 
     outputFile << "%END%" << endl;
@@ -753,14 +730,6 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
     for (auto &rel:relocations)
     {
         outputFile << rel.Serialize().rdbuf();
-        //rel.Out(outputFile);
-
-//        outputFile << right <<
-//        setw(15) << "-" <<
-//        setw(15) << rel.section <<
-//        setw(15) << rel.offset <<
-//        setw(15) << rel.relocationType <<
-//        endl;
     }
 
     outputFile << "%END%" << endl;
@@ -772,9 +741,6 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
     for (auto &section:sections)
     {
         outputFile << section.second.Serialize().rdbuf();
-        //section.second.Out(outputFile);
-
-//        /outputFile << section.second;
     }
 
     outputFile << "%END%" << endl;
