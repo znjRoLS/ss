@@ -17,4 +17,42 @@ enum ScopeType { GLOBAL, LOCAL };
 
 enum RelocationType { LONG, INSTR };
 
+namespace Instruction
+{
+    enum InstructionSymbol {
+        INT = 0,
+        ADD = 1,
+        SUB = 2,
+        MUL = 3,
+        DIV = 4,
+        CMP = 5,
+        AND = 6,
+        OR = 7,
+        NOT = 8,
+        TEST = 9,
+        LDRSTR = 10,
+        NO_INSTRUCTION = 11,
+        CALL = 12,
+        INOUT = 13,
+        MOVSHIFT = 14,
+        LOADC = 15,
+    };
+
+    enum InstructionCondition {
+        EQ = 0,
+        NE = 1,
+        GT = 2,
+        GE = 3,
+        LT = 4,
+        LE = 5,
+        NO_CONDITION = 6,
+        AL = 7
+    };
+}
+
+
+
+
+
+
 #endif //SS_ENUMS_H

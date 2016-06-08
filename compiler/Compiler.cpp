@@ -42,38 +42,38 @@ void split(const string &s, const char* delim, vector<string> & v){
 
 unordered_map<string, u_int8_t> Compiler::instructionCodes =
     {
-        {"int",  0},
-        {"add",  1},
-        {"sub",  2},
-        {"mul",  3},
-        {"div",  4},
-        {"cmp",  5},
-        {"and",  6},
-        {"or",   7},
-        {"not",  8},
-        {"test", 9},
-        {"ldr",  10},
-        {"str",  10},
-        {"call", 12},
-        {"in",   13},
-        {"out",  13},
-        {"mov",  14},
-        {"shr",  14},
-        {"shl",  14},
-        {"ldch", 15},
-        {"ldcl", 15}
+        {"int",  Instruction::INT},
+        {"add",  Instruction::ADD},
+        {"sub",  Instruction::SUB},
+        {"mul",  Instruction::MUL},
+        {"div",  Instruction::DIV},
+        {"cmp",  Instruction::CMP},
+        {"and",  Instruction::AND},
+        {"or",   Instruction::OR},
+        {"not",  Instruction::NOT},
+        {"test", Instruction::TEST},
+        {"ldr",  Instruction::LDRSTR},
+        {"str",  Instruction::LDRSTR},
+        {"call", Instruction::CALL},
+        {"in",   Instruction::INOUT},
+        {"out",  Instruction::INOUT},
+        {"mov",  Instruction::MOVSHIFT},
+        {"shr",  Instruction::MOVSHIFT},
+        {"shl",  Instruction::MOVSHIFT},
+        {"ldch", Instruction::LOADC},
+        {"ldcl", Instruction::LOADC}
     };
 
 unordered_map<string, u_int8_t> Compiler::branchCodes =
     {
-        {"eq", 0},
-        {"ne", 1},
-        {"gt", 2},
-        {"ge", 3},
-        {"lt", 4},
-        {"le", 5},
-        {"",   6},
-        {"al", 7},
+        {"eq", Instruction::EQ},
+        {"ne", Instruction::NE},
+        {"gt", Instruction::GT},
+        {"ge", Instruction::GE},
+        {"lt", Instruction::LT},
+        {"le", Instruction::LE},
+        {"",   Instruction::NO_CONDITION},
+        {"al", Instruction::AL},
     };
 
 

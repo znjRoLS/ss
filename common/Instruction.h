@@ -9,7 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Enums.h"
+
 using namespace std;
+
+using namespace Instruction;
 
 class Instruction {
 public:
@@ -63,15 +67,19 @@ public:
 
     } instrCode;
 
-    Instruction(string _name, string _condition, bool _setFlags);
+    Instruction(InstructionSymbol _name, InstructionCondition _condition, bool _setFlags);
 
     friend ostream &operator<<(ostream &, Instruction &);
 
 
-    string name;
-    string condition;
+    //string name;
+    //string condition;
+    InstructionSymbol instructionSymbol;
+    InstructionCondition instructionCondition;
     bool setFlags;
     vector<string> parameters;
+
+    static Instruction Deserialize(u_int32_t instructionCode);
 
 };
 

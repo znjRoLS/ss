@@ -26,7 +26,7 @@ int main(int argc, char ** argv) {
 
     if (!inputFile.is_open())
     {
-        cerr << "Error openning input file" << endl;
+        cerr << "Error opening input file" << endl;
         return 1;
     }
 

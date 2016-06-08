@@ -318,20 +318,37 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     for (auto &section:sections)
     {
-        outputFile << sectionPositions[section.second.name] << " ";
         outputFile << section.second.Serialize().rdbuf();
     }
 
-    outputFile << "%END%" << endl;
+    outputFile << "%END%" << endl << endl;
 
-    if (outputSection)
+    for (auto &section: sectionPositions)
     {
-        outputFile << "%OUTPUT SECTION%" << endl;
-
-        outputFile << outputSection->Serialize().rdbuf();
-
-        outputFile << "%END%" << endl;
+        outputFile << section.first << " - " << section.second << endl;
     }
+
+    outputFile << endl;
+
+    if (symbols.find("main") == symbols.end())
+    {
+        outputFile << "***** ERROR: Main not defined." << endl;
+        return;
+    }
+    if (!outputSection)
+    {
+        outputFile << "***** ERROR: Not all realocations fixed." << endl;
+        return;
+    }
+
+    outputFile << "%OUTPUT SECTION%" << endl;
+
+    Symbol mainSym = symbols.find("main")->second;
+    outputFile << "Main: " << (mainSym.offset + sectionPositions[mainSym.sectionName]) << endl;
+
+    outputFile << outputSection->Serialize().rdbuf();
+
+    outputFile << "%END%" << endl;
 
 }
 
@@ -347,6 +364,8 @@ void Linker::GenerateOutput()
     outputSection = new Section("output", locationCounter);
 
     //memory = new u_int8_t[locationCounter];
+
+    outputSection->WriteZeros(0, locationCounter);
 
     for (auto &sectionPosition: sectionPositions)
     {

@@ -9,6 +9,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "Section.h"
+
 using namespace std;
 
 class Emulator {
@@ -17,7 +19,19 @@ public:
 
 private:
 
+    void Execute();
+
+    void LoadSection(ifstream&);
+
     static ofstream logFile;
+
+    Section programBinary;
+
+    u_int32_t startPoint;
+
+    u_int32_t programCounter;
+
+
 };
 
 

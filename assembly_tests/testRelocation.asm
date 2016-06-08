@@ -1,4 +1,4 @@
-.public _start
+.public main
 .extern nesto123
 .data
     a: .word 0x12345678
@@ -12,7 +12,7 @@
 .align
 .long nesto123
 .text
-_start:
+main:
     call r1, r-t
     call r2, 6
 
