@@ -165,16 +165,15 @@ Compiler::Compiler()
                         throw runtime_error("Not allowed to use psw in add or sub");
                     }
 
-                    instr.instrCode.instruction_arithmetic_reg.dst = operand1;
-                    instr.instrCode.instruction_arithmetic_reg.src = operand2;
                     instr.instrCode.instruction_arithmetic_reg.addr = 0;
                 }
                 else
                 {
-                    instr.instrCode.instruction_arithmetic_imm.dst = operand1;
-                    instr.instrCode.instruction_arithmetic_imm.imm = operand2;
                     instr.instrCode.instruction_arithmetic_imm.addr = 1;
                 }
+
+                instr.instrCode.instruction_arithmetic_reg.dst = operand1;
+                instr.instrCode.instruction_arithmetic_reg.src = operand2;
 
             }
             },
@@ -701,6 +700,11 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
         outputFile << (instructions[i]);
     }
 
+    for (int i = 0; i < relocations.size() ; i++)
+    {
+        outputFile << (relocations[i]);
+    }
+
 }
 
 
@@ -862,7 +866,7 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
     tokens.pop();
     TokenType nextTokenType = ParseToken(nextToken);
 
-    if (nextTokenType != OPERAND_HEX && nextTokenType != OPERAND_DEC)
+    if (nextTokenType != OPERAND_HEX && nextTokenType != OPERAND_DEC && !(nextTokenType == SYMBOL && directiveName == ".long") )
     {
         throw runtime_error("Bad token " + nextToken + " after directive " + directiveName);
     }
@@ -894,8 +898,30 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
 
     if (directiveName == ".long")
     {
-        binVal = new u_int32_t(operandVal);
-        numBytes = 4;
+        if (nextTokenType != SYMBOL)
+        {
+            binVal = new u_int32_t(operandVal);
+            numBytes = 4;
+        }
+        else
+        {
+            if (writeToMemory)
+            {
+                auto symbolPair = symbols.find(nextToken);
+                if (symbolPair == symbols.end())
+                {
+                    throw runtime_error("Symbol not defined! " + nextToken);
+                }
+
+                Relocation rel(sectionName, locationCounter, RelocationType::LONG);
+                relocations.push_back(rel);
+            }
+
+
+            //TODO: hardcoded, ugly
+            locationCounter += 4;
+            return;
+        }
     }
 
     if (writeToMemory)

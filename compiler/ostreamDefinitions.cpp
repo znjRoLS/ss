@@ -66,6 +66,15 @@ ostream& operator<<(ostream& out, ScopeType s)
     }
 }
 
+ostream& operator<<(ostream& out, RelocationType s)
+{
+    switch(s)
+    {
+        case RelocationType::LONG: return out << "LONG";
+        case RelocationType::INSTR: return out << "INSTR";
+    }
+}
+
 ostream& operator<<(ostream& out, InstructionType s)
 {
     switch(s)
@@ -102,8 +111,18 @@ ostream& operator<<(ostream& out, Symbol& symbol)
     out << "Symbol: " << symbol.name << endl;
     out << "\tDefined:\t" << symbol.defined << endl;
     out << "\tSection:\t" << symbol.section << endl;
-    out << "\toffset:\t" << symbol.offset << endl;
+    out << "\tOffset:\t" << symbol.offset << endl;
     out << "\tType:\t" << symbol.scope << endl;
+
+    return out;
+}
+
+ostream& operator<<(ostream& out, Relocation& rel)
+{
+    out << "Relocation: " << endl;
+    out << "\tSection:\t" << rel.section << endl;
+    out << "\tOffset:\t" << rel.offset << endl;
+    out << "\tRelocationType:\t" << rel.relocationType << endl;
 
     return out;
 }

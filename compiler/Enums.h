@@ -15,4 +15,6 @@ enum SectionType { START, TEXT, DATA, BSS};
 
 enum ScopeType { GLOBAL, LOCAL };
 
+enum RelocationType { LONG, INSTR };
+
 #endif //SS_ENUMS_H

@@ -9,6 +9,7 @@
 #include "Symbol.h"
 #include "Instruction.h"
 #include "Enums.h"
+#include "Relocation.h"
 
 #include <iostream>
 #include <fstream>
@@ -45,10 +46,11 @@ private:
 
     unordered_map<string, Symbol> symbols;
     vector<Instruction> instructions;
+    unordered_map<string, u_int8_t*> sections;
+    vector<Relocation> relocations;
 
     vector<vector<string> > assemblyInput;
 
-    unordered_map<string, u_int8_t*> sections;
 
     static ofstream logFile;
 
