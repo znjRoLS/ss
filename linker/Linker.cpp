@@ -35,6 +35,9 @@ void Linker::Link(ifstream &loaderScriptFile, vector<ifstream> &inputFiles, ofst
         logFile << "Load symbols from script" << endl;
         loaderScript.FillSymbolsAndSectionPositions(symbols, sectionPositions);
 
+        logFile << "Load remaining sections" << endl;
+        FillRemainingSections();
+
         logFile << "Check output " << endl;
         FixRelocations();
 
@@ -141,6 +144,43 @@ void Linker::LoadFile(ifstream &inputFile)
     }
 
 }
+
+
+void Linker::FillRemainingSections()
+{
+    vector<string> remainingSections;
+
+    for (auto &symbol: symbols)
+    {
+        if (symbol.second.symbolType == TokenType::SECTION && sectionPositions.find(symbol.second.name) == sectionPositions.end())
+        {
+            remainingSections.push_back(symbol.second.name);
+        }
+    }
+
+    sort(remainingSections.begin(), remainingSections.end());
+
+    locationCounter = 0;
+    for (auto &section: sectionPositions)
+    {
+        if (section.second > locationCounter)
+        {
+            //TODO: error ?
+            locationCounter = section.second + sections.find(section.first)->second.size;
+        }
+    }
+
+    for (auto &sectionName: remainingSections)
+    {
+        auto section = sections.find(sectionName)->second;
+        int size = section.size;
+
+        sectionPositions.insert({sectionName, locationCounter});
+
+        locationCounter += size;
+    }
+}
+
 
 void Linker::FixRelocations()
 {

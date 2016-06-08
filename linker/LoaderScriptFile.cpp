@@ -13,7 +13,7 @@
 using namespace std;
 
 regex section("^.(text|data|bss)(.[a-zA-Z_][a-zA-Z0-9]*)?$");
-string allowedChars = "[_0-9a-zA-Z\\(\\)\\.]";
+string allowedChars = "[_0-9a-zA-Z\\(\\)\\.,]";
 regex assignment("^(" + allowedChars + "+)=(-?" + allowedChars + "+)((?:[\\+-]" + allowedChars + "+)*)$");
 
 extern ofstream logFile;
@@ -41,7 +41,7 @@ unordered_map<int, regex> tokenParsers =
         {DEC, regex("^([0-9]+)$")},
         {HEX, regex("^(0x[0-9abcdef]+)$")},
         {SCRIPTLABEL, regex("^([_a-zA-Z][a-zA-Z0-9]*)$")},
-        {ALIGN, regex("^align\\(([_a-zA-Z][a-zA-Z0-9]*),([0-9]+|0x[0-9abcdef]+)\\)$")},
+        {ALIGN, regex("^align\\(([_a-zA-Z][a-zA-Z0-9]*|\\.),([0-9]+|0x[0-9abcdef]+)\\)$")},
     };
 
 

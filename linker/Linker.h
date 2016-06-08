@@ -28,6 +28,8 @@ private:
 
     void FixRelocations();
 
+    void FillRemainingSections();
+
     void WriteOutputFile(ofstream &outputFile);
 
     static ofstream logFile;
@@ -38,6 +40,8 @@ private:
     unordered_map<string,int> sectionPositions;
 
     LoaderScriptFile loaderScript;
+
+    u_int32_t locationCounter;
 
     void AddSymbol(Symbol&);
     int AddSection(Symbol&, Section&);
