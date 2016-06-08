@@ -26,6 +26,20 @@ ostream& operator<<(ostream& out, TokenType);
 ostream& operator<<(ostream& out, State);
 ostream& operator<<(ostream& out, ScopeType);
 
+void split(const string &s, const char* delim, vector<string> & v){
+    // to avoid modifying original string
+    // first duplicate the original string and return a char pointer then free the memory
+    char * dup = strdup(s.c_str());
+    char * token = strtok(dup, delim);
+    while(token != NULL){
+        v.push_back(string(token));
+        // the call is treated as a subsequent calls to strtok:
+        // the function continues from where it left in previous invocation
+        token = strtok(NULL, delim);
+    }
+    free(dup);
+}
+
 unordered_map<string, u_int8_t> Compiler::instructionCodes =
     {
         {"int",  0},
@@ -439,8 +453,15 @@ void Compiler::FirstRun()
                         HandleDirective(currentToken, tokensQueue, offsetCounter, currentSection, false);
                         return LINE_END;
                     case SECTION:
-                        sections.insert({currentSection, Section(currentSection, offsetCounter)});
-                        logFile << "created section ! " << currentSection << " " << offsetCounter << endl;
+                        if (currentSection != "start")
+                        {
+                            sections.insert({currentSection, Section(currentSection, offsetCounter)});
+                            logFile << "created section ! " << currentSection << " " << offsetCounter << endl;
+                            //TODO: check if exists
+                            //cout << "searching for " << currentSection << endl;
+                            symbols.find(currentSection)->second.size = offsetCounter;
+                        }
+
                         currentSection = currentToken;
                         UpdateCurrentSection(currentToken, currentSectionType, offsetCounter);
                         AddNewSymbol(currentToken, true, currentSectionType, currentSection, ScopeType::LOCAL, offsetCounter);
@@ -505,6 +526,7 @@ void Compiler::FirstRun()
     //create last section
     //sections[currentSection] = new u_int8_t[offsetCounter];
     sections.insert({currentSection, Section(currentSection, offsetCounter)});
+    symbols.find(currentSection)->second.size = offsetCounter;
 
 }
 
@@ -706,6 +728,8 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
         setw(15) << "SectionName" <<
         setw(15) << "Offset" <<
         setw(15) << "Type" <<
+        setw(15) << "Size" <<
+        setw(15) << "SymbolType" <<
         endl;
 
     for (auto &symbol:symbols)
@@ -787,6 +811,8 @@ TokenType Compiler::ParseToken(string token)
 
 void Compiler::UpdateCurrentSection(string sectionName, SectionType &currentSection, u_int32_t &offsetCounter)
 {
+
+
 
     offsetCounter = 0;
 
@@ -1073,7 +1099,15 @@ void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSect
         throw runtime_error("Error, symbol already defined ! " + symName);
     }
 
-    Symbol sym(symName, symDefined, symSectionName, symScope, locationCounter);
+    TokenType tokenType = TokenType::LABEL;
+    if (regex_match(symName, tokenParsers[SECTION]))
+    {
+        tokenType = TokenType::SECTION;
+    }
+
+    Symbol sym(symName, symDefined, symSectionName, symScope, locationCounter, tokenType);
+
+//    /cout << "inserted " << symName << endl;
 
     symbols.insert({symName, sym});
 }

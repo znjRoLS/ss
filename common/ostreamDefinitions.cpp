@@ -46,6 +46,37 @@ ostream& operator<<(ostream& out, TokenType s)
     }
 }
 
+istream& operator>>(istream& in, TokenType &s)
+{
+    string token;
+    in >> token;
+
+    if (token == "PUB_EXT")
+        s = TokenType::PUB_EXT;
+    if (token == "LABEL")
+        s = TokenType::LABEL;
+    if (token == "SECTION")
+        s = TokenType::SECTION;
+    if (token == "DIRECTIVE")
+        s = TokenType::DIRECTIVE;
+    if (token == "INSTRUCTION")
+        s = TokenType::INSTRUCTION;
+    if (token == "SYMBOL")
+        s = TokenType::SYMBOL;
+    if (token == "OPERAND_REG")
+        s = TokenType::OPERAND_REG;
+    if (token == "OPERAND_DEC")
+        s = TokenType::OPERAND_DEC;
+    if (token == "OPERAND_HEX")
+        s = TokenType::OPERAND_HEX;
+    if (token == "ILLEGAL")
+        s = TokenType::ILLEGAL;
+    if (token == "SYMBOLDIFF")
+        s = TokenType::SYMBOLDIFF;
+
+    return in;
+}
+
 ostream& operator<<(ostream& out, SectionType s)
 {
     switch(s)
@@ -142,6 +173,7 @@ ostream& operator<<(ostream& out, Symbol& symbol)
     out << "\tSectionName:\t" << symbol.sectionName << endl;
     out << "\tOffset:\t" << symbol.offset << endl;
     out << "\tType:\t" << symbol.scope << endl << endl;
+    out << "\tSize:\t" << symbol.size << endl << endl;
 
     return out;
 }

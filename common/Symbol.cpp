@@ -11,14 +11,17 @@ using namespace std;
 
 istream& operator>>(istream& , ScopeType&);
 ostream& operator<<(ostream& , ScopeType);
+istream& operator>>(istream& , TokenType &);
+ostream& operator<<(ostream& , TokenType);
 
-Symbol::Symbol(string _name, bool _defined, string _sectionName, ScopeType _scope, unsigned long _offset, int _size):
+Symbol::Symbol(string _name, bool _defined, string _sectionName, ScopeType _scope, unsigned long _offset, TokenType _symbolType, int _size):
         name(_name),
         defined(_defined),
         sectionName(_sectionName),
         scope(_scope),
         offset(_offset),
-        size(_size)
+        size(_size),
+        symbolType(_symbolType)
 {
 
 }
@@ -34,7 +37,8 @@ stringstream Symbol::Serialize()
         setw(15) << sectionName <<
         setw(15) << offset <<
         setw(15) << scope <<
-        setw(15) << scope <<
+        setw(15) << size <<
+        setw(15) << symbolType <<
         endl;
 
     return ss;
@@ -59,8 +63,10 @@ Symbol Symbol::Deserialize(string instr)
     in >> scope;
     int size;
     in >> size;
+    TokenType symbolType;
+    in >> symbolType;
 
-    Symbol sym(name,defined, sectionName, scope, offset, size);
+    Symbol sym(name,defined, sectionName, scope, offset, symbolType, size);
 
     return sym;
 }

@@ -33,7 +33,7 @@ void Linker::Link(ifstream &loaderScriptFile, vector<ifstream> &inputFiles, ofst
 
 
         logFile << "Load symbols from script" << endl;
-        LoadSymbolsFromScript();
+        loaderScript.FillSymbolsAndSectionPositions(symbols, sectionPositions);
 
         logFile << "Check output " << endl;
         FixRelocations();
@@ -55,9 +55,6 @@ void Linker::Link(ifstream &loaderScriptFile, vector<ifstream> &inputFiles, ofst
 
 void Linker::AddSymbol(Symbol& sym)
 {
-
-    if (sectionRegex)
-
     auto symbolOld = symbols.find(sym.name);
 
     if (symbolOld == symbols.end())
@@ -78,6 +75,29 @@ void Linker::AddSymbol(Symbol& sym)
     }
 }
 
+int Linker::AddSection(Symbol& sym, Section& section)
+{
+    auto symbolOld = symbols.find(sym.name);
+
+    int offset;
+
+    if (symbolOld == symbols.end())
+    {
+        symbols.insert({sym.name, sym});
+        offset = 0;
+    }
+    else
+    {
+        offset = symbolOld->second.size;
+
+        symbolOld->second.size += sym.size;
+
+        sections.find(sym.name)->second += section;
+    }
+
+    return offset;
+}
+
 void Linker::LoadFile(ifstream &inputFile)
 {
 
@@ -85,32 +105,40 @@ void Linker::LoadFile(ifstream &inputFile)
 
     objectFile.LoadFromFile(inputFile);
 
-    for (auto &section: objectFile.sections)
+    unordered_map<string, int> sectionOffsets;
+
+//    for (auto &section: objectFile.sections)
+//    {
+//        sections.insert({section.first, section.second});
+//    }
+
+    for (auto &symbol: objectFile.symbols)
     {
-        sections.insert({section.first, section.second});
+        if (symbol.second.symbolType == TokenType::SECTION)
+        {
+            //TODO: kobasica
+            auto section = objectFile.sections.find(symbol.second.name);
+            sections.insert({section->first, section->second});
+
+            logFile << "Adding section symbol " << symbol.second.name << endl;
+            sectionOffsets[symbol.second.name] = AddSection(symbol.second, objectFile.sections.find(symbol.second.name)->second);
+        }
     }
 
     for (auto &symbol: objectFile.symbols)
     {
-        AddSymbol(symbol.second);
+        if (symbol.second.symbolType == TokenType::LABEL)
+        {
+            logFile << "Adding label symbol " << symbol.second.name << endl;
+            symbol.second.offset += sectionOffsets[symbol.second.sectionName];
+            AddSymbol(symbol.second);
+        }
     }
 
     for (auto &relocation: objectFile.relocations)
     {
         relocations.push_back(relocation);
     }
-
-}
-
-
-void Linker::LoadSymbolsFromScript()
-{
-    loaderScript.FillSymbols(symbols);
-//    for (auto &symbol: loaderScript.symbols)
-//    {
-//        AddSymbol(symbol.second);
-//    }
-
 
 }
 
@@ -178,6 +206,8 @@ void Linker::WriteOutputFile(ofstream &outputFile)
     setw(15) << "SectionName" <<
     setw(15) << "Offset" <<
     setw(15) << "Type" <<
+    setw(15) << "Size" <<
+    setw(15) << "SymbolType" <<
     endl;
 
     for (auto &symbol:symbols)
@@ -212,10 +242,13 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     for (auto &section:sections)
     {
+        outputFile << sectionPositions[section.second.name] << " ";
         outputFile << section.second.Serialize().rdbuf();
     }
 
     outputFile << "%END%" << endl;
+
+
 }
 
 

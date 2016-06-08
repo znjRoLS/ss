@@ -18,7 +18,7 @@ public:
 
     void LoadFromFile(istream&);
 
-    void FillSymbols(unordered_map<string,Symbol> &);
+    void FillSymbolsAndSectionPositions(unordered_map<string,Symbol> &, unordered_map<string, int> &);
 
     //unordered_map<string, Symbol> symbols;
 

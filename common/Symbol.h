@@ -20,7 +20,7 @@ public:
 
     friend ostream &operator<<(ostream &, Symbol &);
 
-    Symbol(string _name, bool _defined, string _sectionName, ScopeType _scope, unsigned long, int size = 0);
+    Symbol(string _name, bool _defined, string _sectionName, ScopeType _scope, unsigned long, TokenType ,int size = 0);
 
     string name;
     bool defined;
@@ -29,6 +29,7 @@ public:
     string sectionName;
     ScopeType scope;
     int size;
+    TokenType symbolType;
 
     stringstream Serialize();
 

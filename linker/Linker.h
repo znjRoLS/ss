@@ -35,12 +35,12 @@ private:
     unordered_map<string,Section> sections;
     unordered_map<string,Symbol> symbols;
     vector<Relocation> relocations;
+    unordered_map<string,int> sectionPositions;
 
     LoaderScriptFile loaderScript;
 
     void AddSymbol(Symbol&);
-
-    void LoadSymbolsFromScript();
+    int AddSection(Symbol&, Section&);
 
     void GenerateOutput();
 
