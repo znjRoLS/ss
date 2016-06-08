@@ -74,6 +74,7 @@ void Linker::AddSymbol(Symbol& sym)
             symbolOld->second.offset = sym.offset;
             symbolOld->second.sectionName = sym.sectionName;
             symbolOld->second.scope = ScopeType::GLOBAL;
+            symbolOld->second.symbolType = sym.symbolType;
         }
     }
 }
@@ -140,6 +141,8 @@ void Linker::LoadFile(ifstream &inputFile)
 
     for (auto &relocation: objectFile.relocations)
     {
+        //TODO: error ?
+        relocation.offset += sectionOffsets[relocation.section];
         relocations.push_back(relocation);
     }
 
@@ -182,40 +185,73 @@ void Linker::FillRemainingSections()
 }
 
 
+u_int32_t Linker::GetSymbolVal(string symbolName)
+{
+    u_int32_t ret = 0;
+
+    auto symbol = symbols.find(symbolName);
+    if (symbol == symbols.end())
+    {
+        throw runtime_error("Symbol not found " + symbolName);
+    }
+
+    if (symbol->second.symbolType == TokenType::LABEL || symbol->second.symbolType == TokenType::OPERAND_DEC)
+    {
+        ret += symbol->second.offset;
+    }
+
+    if (symbol->second.symbolType == TokenType::LABEL || symbol->second.symbolType == TokenType::SECTION)
+    {
+        string sectionName = symbol->second.sectionName;
+        auto sectionPos = sectionPositions.find(sectionName);
+        if (sectionPos == sectionPositions.end())
+        {
+            throw runtime_error("rand err? " + sectionName);
+        }
+
+        ret += sectionPos->second;
+    }
+
+    return ret;
+}
+
 void Linker::FixRelocations()
 {
-//    vector<Relocation> newRelocations;
-//    for (auto &rel:relocations)
-//    {
-//        auto symbol = symbols.find(rel.symbolName);
-//
-//        if (symbol == symbols.end())
-//        {
-//            throw runtime_error("rand err");
-//        }
-//
-//        if (symbol->second.defined)
-//        {
-//            u_int32_t symbolVal =
-//
-//            auto section = sections.find(rel.section);
-//
-//            if (section == sections.end())
-//            {
-//                throw runtime_error("random errr");
-//            }
-//
-//            if (section->second.size <= rel.offset)
-//            {
-//                throw runtime_error("randddddom err");
-//            }
-//
-//            section->second.Write(&rel.)
-//        }
-//    }
-//
-//    relocations = newRelocations;
+    vector<Relocation> newRelocations;
+    for (auto &rel:relocations)
+    {
+        auto symbol = symbols.find(rel.symbolName);
 
+        if (symbol == symbols.end())
+        {
+            throw runtime_error("rand err");
+        }
+
+        if (symbol->second.defined)
+        {
+            u_int32_t symbolVal = GetSymbolVal(symbol->second.name);
+
+            auto section = sections.find(rel.section);
+
+            if (section == sections.end())
+            {
+                throw runtime_error("random errr");
+            }
+
+            if (section->second.size <= rel.offset)
+            {
+                throw runtime_error("randddddom err");
+            }
+
+            section->second.Write(&symbolVal, rel.offset, 4);
+        }
+        else
+        {
+            newRelocations.push_back(rel);
+        }
+    }
+
+    relocations = newRelocations;
 }
 
 void Linker::WriteOutputFile(ofstream &outputFile)
@@ -288,11 +324,39 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     outputFile << "%END%" << endl;
 
+    if (outputSection)
+    {
+        outputFile << "%OUTPUT SECTION%" << endl;
+
+        outputFile << outputSection->Serialize().rdbuf();
+
+        outputFile << "%END%" << endl;
+    }
 
 }
 
 
 void Linker::GenerateOutput()
 {
+    if (!relocations.empty())
+    {
+        logFile << "not all relocations fixed" << endl;
+        return;
+    }
 
+    outputSection = new Section("output", locationCounter);
+
+    //memory = new u_int8_t[locationCounter];
+
+    for (auto &sectionPosition: sectionPositions)
+    {
+        string sectionName = sectionPosition.first;
+        int sectionStart = sectionPosition.second;
+
+        auto section = sections.find(sectionName);
+        //TODO: error ?
+
+        outputSection->Write(section->second.memory, sectionStart, section->second.size);
+//        memcpy(memory + sectionStart,section->second.memory, section->second.size);
+    }
 }

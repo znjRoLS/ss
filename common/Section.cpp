@@ -24,19 +24,19 @@ Section::~Section()
 //    /delete memory;
 }
 
-void Section::Write(void *src, int pos, int length)
+void Section::Write(void *src, int pos, size_t length)
 {
     memcpy(memory + pos, src, length);
 }
 
-void Section::WriteZeros(int pos, int length)
+void Section::WriteZeros(int pos, size_t length)
 {
     memset(memory+pos, 0, length);
 }
 
 Section& Section::operator+=(Section& other)
 {
-    int newSize = size + other.size;
+    size_t newSize = size + other.size;
 
     u_int8_t *newMem = new u_int8_t[newSize];
 
@@ -60,7 +60,7 @@ stringstream Section::Serialize()
     for (int i = 0; i < size; i ++)
     {
         if (i%tokensByLine == 0) out << endl;
-        out << setfill('0') << setw(2) << hex << (u_int32_t )memory[i] << " ";
+        out << right << setfill('0') << setw(2) << hex << (u_int32_t )memory[i] << " ";
 
     }
 

@@ -48,6 +48,11 @@ private:
 
     void GenerateOutput();
 
+    //u_int8_t *memory = nullptr;
+    Section *outputSection = nullptr;
+
+    u_int32_t GetSymbolVal(string symbolName);
+
 
 };
 

@@ -172,6 +172,7 @@ void AddSymbol(unordered_map<string, Symbol> &symbols, Symbol& sym)
             symbolOld->second.offset = sym.offset;
             symbolOld->second.sectionName = sym.sectionName;
             symbolOld->second.scope = ScopeType::GLOBAL;
+            symbolOld->second.symbolType = sym.symbolType;
         }
     }
 }

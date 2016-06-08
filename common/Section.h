@@ -16,13 +16,13 @@ public:
     Section (string, int);
     ~Section();
 
-    void Write(void *src, int pos, int length);
-    void WriteZeros(int pos, int length);
+    void Write(void *src, int pos, size_t length);
+    void WriteZeros(int pos, size_t length);
 
     Section& operator+=(Section&);
 
     string name;
-    int size;
+    size_t size;
     u_int8_t *memory;
 
     friend ostream& operator<<(ostream&, Section&);
