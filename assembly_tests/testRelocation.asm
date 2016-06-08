@@ -4,6 +4,9 @@
     a: .word 0x12345678
     t: .long 0x12343
     r: .char 34
+    tt: .long 0x12343
+    ttt: .long 0x12343
+    tttt: .long 0x12343
 .align
 .skip 1
 .align

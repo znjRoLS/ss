@@ -10,6 +10,7 @@
 #include "Instruction.h"
 #include "Enums.h"
 #include "Relocation.h"
+#include "Section.h"
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +39,7 @@ private:
 
     void HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory);
     void AddNewSymbol(string symName, bool symDefined, SectionType symSection,string,  ScopeType symScope, u_int32_t locationCounter);
-    void HandleInstruction(string, queue<string>&, u_int32_t&);
+    void HandleInstruction(string, string, queue<string>&, u_int32_t&);
     TokenType ParseToken(string token);
     void UpdateCurrentSection(string sectionName, SectionType &currentSection, u_int32_t &offsetCounter);
     u_int32_t ParseOperand(string token, int immSize = 0);
@@ -46,7 +47,7 @@ private:
 
     unordered_map<string, Symbol> symbols;
     vector<Instruction> instructions;
-    unordered_map<string, u_int8_t*> sections;
+    unordered_map<string, Section> sections;
     vector<Relocation> relocations;
 
     vector<vector<string> > assemblyInput;

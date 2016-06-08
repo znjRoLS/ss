@@ -14,3 +14,9 @@ Symbol::Symbol(string _name, bool _defined, SectionType _section, string _sectio
 {
 
 }
+
+
+void Symbol::Out(ostream &out)
+{
+    
+}

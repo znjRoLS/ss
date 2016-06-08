@@ -39,6 +39,8 @@ void Linker::Link(vector<ifstream> &inputFiles, ofstream &outputFile)
 void Linker::LinkFile(ifstream &inputFile)
 {
 
+
+
 }
 
 void Linker::CheckOutputFile()

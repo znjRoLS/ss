@@ -28,6 +28,8 @@ public:
     string sectionName;
     ScopeType scope;
 
+    void Out(ostream& out);
+
 };
 
 #endif //SS_SYMBOL_H

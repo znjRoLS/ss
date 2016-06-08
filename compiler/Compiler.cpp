@@ -20,8 +20,11 @@
 
 ofstream Compiler::logFile("compiler/log");
 
-ostream& operator<<(ostream& out, TokenType s);
-ostream& operator<<(ostream& out, State s);
+ostream& operator<<(ostream& out, pair<string, u_int8_t*>&);
+ostream& operator<<(ostream& out, RelocationType);
+ostream& operator<<(ostream& out, TokenType);
+ostream& operator<<(ostream& out, State);
+ostream& operator<<(ostream& out, ScopeType);
 
 unordered_map<string, u_int8_t> Compiler::instructionCodes =
     {
@@ -451,7 +454,8 @@ void Compiler::FirstRun()
                         HandleDirective(currentToken, tokensQueue, offsetCounter, currentSection, false);
                         return LINE_END;
                     case SECTION:
-                        sections[currentSection] = new u_int8_t[offsetCounter];
+                        sections.insert({currentSection, Section(currentSection, offsetCounter)});
+                        logFile << "created section ! " << currentSection << " " << offsetCounter << endl;
                         currentSection = currentToken;
                         UpdateCurrentSection(currentToken, currentSectionType, offsetCounter);
                         AddNewSymbol(currentToken, true, currentSectionType, currentSection, ScopeType::LOCAL, offsetCounter);
@@ -510,7 +514,12 @@ void Compiler::FirstRun()
 
             currentState = stateMachine[currentState]();
         }
+
     }
+
+    //create last section
+    //sections[currentSection] = new u_int8_t[offsetCounter];
+    sections.insert({currentSection, Section(currentSection, offsetCounter)});
 
 }
 
@@ -576,7 +585,7 @@ void Compiler::SecondRun()
                             return LINE_END;
                         case INSTRUCTION:
 
-                            HandleInstruction(currentToken, tokensQueue, offsetCounter);
+                            HandleInstruction(currentToken, currentSection, tokensQueue, offsetCounter);
 
 //                            offsetCounter += 4;
 //                            while (!tokensQueue.empty()) tokensQueue.pop();
@@ -683,26 +692,71 @@ void Compiler::SecondRun()
 
 void Compiler::WriteObjectFile(ofstream& outputFile)
 {
-    for(auto iterator = symbols.begin(); iterator != symbols.end(); iterator++)
+    for (auto &symbol :symbols)
     {
-        Symbol &symbol = (iterator->second);
-
-        outputFile << "Symbol: " << symbol.name << endl;
-        outputFile << "\tDefined:\t" << (symbol.defined?"true":"false") << endl;
-        outputFile << "\tSection:\t" << symbol.section << endl;
-        outputFile << "\tSectionName:\t" << symbol.sectionName << endl;
-        outputFile << "\toffset:\t" << symbol.offset << endl;
-        outputFile << "\tType:\t" << symbol.scope << endl;
+        logFile << symbol.second;
     }
 
     for (int i = 0; i < instructions.size() ; i++)
     {
-        outputFile << (instructions[i]);
+        logFile << (instructions[i]);
     }
 
     for (int i = 0; i < relocations.size() ; i++)
     {
-        outputFile << (relocations[i]);
+        logFile << (relocations[i]);
+    }
+
+    for (auto &section: sections)
+    {
+        logFile << section.second;
+    }
+
+    outputFile << left << "  " <<
+        setw(15) << "Symbol" <<
+        setw(15) << "SymbolName" <<
+        setw(15) << "Defined" <<
+        setw(15) << "SectionName" <<
+        setw(15) << "Offset" <<
+        setw(15) << "Type" <<
+        endl;
+
+    for (auto &symbol:symbols)
+    {
+        outputFile << right <<
+            setw(15) << "-" <<
+            setw(15) << symbol.second.name <<
+            setw(15) << symbol.second.defined <<
+            setw(15) << symbol.second.sectionName <<
+            setw(15) << symbol.second.offset <<
+            setw(15) << symbol.second.scope <<
+            endl;
+    }
+
+    outputFile << endl;
+
+    outputFile << left << "  " <<
+        setw(15) << "Relocation" <<
+        setw(15) << "SectionName" <<
+        setw(15) << "Offset" <<
+        setw(15) << "Type" <<
+        endl;
+
+    for (auto &rel:relocations)
+    {
+        outputFile << right <<
+        setw(15) << "-" <<
+        setw(15) << rel.section <<
+        setw(15) << rel.offset <<
+        setw(15) << rel.relocationType <<
+        endl;
+    }
+
+    outputFile << endl << left;
+
+    for (auto &section:sections)
+    {
+        outputFile << section.second;
     }
 
 }
@@ -852,11 +906,24 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
 
 void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_int32_t &locationCounter, string sectionName, bool writeToMemory)
 {
+    auto sectionPair = sections.find(sectionName);
+    //TODO: ugly as hell
+    if (writeToMemory && sectionPair == sections.end())
+    {
+        throw runtime_error("rand err");
+    }
+
     if (directiveName == ".align")
     {
+        int oldLc = locationCounter;
         if (locationCounter/4*4 != locationCounter)
         {
             locationCounter = (locationCounter/4+1)*4;
+        }
+        if (writeToMemory)
+        {
+            sectionPair->second.WriteZeros(oldLc, locationCounter - oldLc);
+
         }
 
         return;
@@ -876,6 +943,10 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
 
     if (directiveName == ".skip")
     {
+        if (writeToMemory)
+        {
+            sectionPair->second.WriteZeros(locationCounter, operandVal);
+        }
         locationCounter += operandVal;
         return;
     }
@@ -915,6 +986,8 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
 
                 Relocation rel(sectionName, locationCounter, RelocationType::LONG);
                 relocations.push_back(rel);
+
+                sectionPair->second.WriteZeros(locationCounter, 4);
             }
 
 
@@ -926,7 +999,8 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
 
     if (writeToMemory)
     {
-        memcpy(sections[sectionName] + locationCounter, binVal, numBytes);
+        sectionPair->second.Write(binVal, locationCounter, numBytes);
+        //memcpy(sections[sectionName] + locationCounter, binVal, numBytes);
     }
 
     locationCounter += numBytes;
@@ -957,7 +1031,7 @@ void Compiler::GetOperand(queue<string> &tokens, string &token, u_int32_t &opera
 
 
 
-void Compiler::HandleInstruction(string instructionName, queue<string> &tokens, u_int32_t &locationCounter)
+void Compiler::HandleInstruction(string instructionName, string currentSection, queue<string> &tokens, u_int32_t &locationCounter)
 {
     smatch base_match;
 
@@ -983,6 +1057,22 @@ void Compiler::HandleInstruction(string instructionName, queue<string> &tokens, 
         instructionsHandlers[instructionType](instruction, tokens);
 
         instructions.push_back(instruction);
+
+        //TODO: ldc and mapping one instruction to more instructions !
+
+        if (sections.find(currentSection) == sections.end())
+        {
+            throw runtime_error("random err");
+        }
+
+        auto sectionPair = sections.find(currentSection);
+        if (sectionPair == sections.end())
+        {
+            throw runtime_error("rand err");
+        }
+        sectionPair->second.Write(&instruction.instrCode.binaryCode, locationCounter, 4);
+
+//        memcpy(sections[currentSection] + locationCounter, &instruction.instrCode.binaryCode, 4);
 
         locationCounter += 4;
     }

@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 
 #include "Compiler.h"
 #include "Enums.h"
@@ -111,8 +112,9 @@ ostream& operator<<(ostream& out, Symbol& symbol)
     out << "Symbol: " << symbol.name << endl;
     out << "\tDefined:\t" << symbol.defined << endl;
     out << "\tSection:\t" << symbol.section << endl;
+    out << "\tSectionName:\t" << symbol.sectionName << endl;
     out << "\tOffset:\t" << symbol.offset << endl;
-    out << "\tType:\t" << symbol.scope << endl;
+    out << "\tType:\t" << symbol.scope << endl << endl;
 
     return out;
 }
@@ -122,7 +124,23 @@ ostream& operator<<(ostream& out, Relocation& rel)
     out << "Relocation: " << endl;
     out << "\tSection:\t" << rel.section << endl;
     out << "\tOffset:\t" << rel.offset << endl;
-    out << "\tRelocationType:\t" << rel.relocationType << endl;
+    out << "\tRelocationType:\t" << rel.relocationType << endl << endl;
 
     return out;
+}
+
+
+ostream& operator<<(ostream& out, Section& section)
+{
+    const int tokensByLine = 8;
+    out << "Section: " << section.name << endl;
+    out << "Size: " << dec << section.size;
+    for (int i = 0; i < section.size; i ++)
+    {
+        if (i%tokensByLine == 0) out << endl;
+        out << setfill('0') << setw(2) << hex << (u_int32_t )section.memory[i] << " ";
+
+    }
+
+    out << endl << endl;
 }
