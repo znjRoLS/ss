@@ -5,9 +5,9 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Compiler.h"
+#include "../compiler/Compiler.h"
 #include "Enums.h"
-#include "Instruction.h"
+#include "../compiler/Instruction.h"
 #include "Symbol.h"
 
 
@@ -67,6 +67,21 @@ ostream& operator<<(ostream& out, ScopeType s)
     }
 }
 
+
+istream& operator>>(istream& in, ScopeType &s)
+{
+    string token;
+    in >> token;
+
+    if (token == "GLOBAL")
+        s = ScopeType::GLOBAL;
+    if (token == "LOCAL")
+        s = ScopeType::LOCAL;
+
+    return in;
+}
+
+
 ostream& operator<<(ostream& out, RelocationType s)
 {
     switch(s)
@@ -74,6 +89,19 @@ ostream& operator<<(ostream& out, RelocationType s)
         case RelocationType::LONG: return out << "LONG";
         case RelocationType::INSTR: return out << "INSTR";
     }
+}
+
+istream& operator>>(istream& in, RelocationType &s)
+{
+    string token;
+    in >> token;
+
+    if (token == "LONG")
+        s = RelocationType::LONG;
+    if (token == "INSTR")
+        s = RelocationType::INSTR;
+
+    return in;
 }
 
 ostream& operator<<(ostream& out, InstructionType s)
@@ -111,7 +139,6 @@ ostream& operator<<(ostream& out, Symbol& symbol)
 {
     out << "Symbol: " << symbol.name << endl;
     out << "\tDefined:\t" << symbol.defined << endl;
-    out << "\tSection:\t" << symbol.section << endl;
     out << "\tSectionName:\t" << symbol.sectionName << endl;
     out << "\tOffset:\t" << symbol.offset << endl;
     out << "\tType:\t" << symbol.scope << endl << endl;
@@ -122,6 +149,7 @@ ostream& operator<<(ostream& out, Symbol& symbol)
 ostream& operator<<(ostream& out, Relocation& rel)
 {
     out << "Relocation: " << endl;
+    out << "\tSymbol:\t" << rel.symbolName << endl;
     out << "\tSection:\t" << rel.section << endl;
     out << "\tOffset:\t" << rel.offset << endl;
     out << "\tRelocationType:\t" << rel.relocationType << endl << endl;

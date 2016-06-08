@@ -5,10 +5,22 @@
 #ifndef SS_OBJECTFILE_H
 #define SS_OBJECTFILE_H
 
+#include "Enums.h"
+#include "Section.h"
+#include "Symbol.h"
+#include "Relocation.h"
+
+#include <vector>
+#include <unordered_map>
 
 class ObjectFile {
 public:
 
+    void LoadFromFile(ifstream& );
+
+    unordered_map<string,Section> sections;
+    unordered_map<string,Symbol> symbols;
+    vector<Relocation> relocations;
 
 
 };

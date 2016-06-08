@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <sstream>
 
 #include "Enums.h"
 
@@ -19,16 +20,18 @@ public:
 
     friend ostream &operator<<(ostream &, Symbol &);
 
-    Symbol(string _name, bool _defined, SectionType _section, string _sectionName, ScopeType _scope, unsigned long);
+    Symbol(string _name, bool _defined, string _sectionName, ScopeType _scope, unsigned long);
 
     string name;
     bool defined;
     unsigned long offset;
-    SectionType section;
+    //SectionType section;
     string sectionName;
     ScopeType scope;
 
-    void Out(ostream& out);
+    stringstream Serialize();
+
+    static Symbol Deserialize(string);
 
 };
 

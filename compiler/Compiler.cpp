@@ -712,6 +712,8 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
         logFile << section.second;
     }
 
+    outputFile << "%SYMBOLS SECTION%" << endl;
+
     outputFile << left << "  " <<
         setw(15) << "Symbol" <<
         setw(15) << "SymbolName" <<
@@ -723,20 +725,26 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
 
     for (auto &symbol:symbols)
     {
-        outputFile << right <<
-            setw(15) << "-" <<
-            setw(15) << symbol.second.name <<
-            setw(15) << symbol.second.defined <<
-            setw(15) << symbol.second.sectionName <<
-            setw(15) << symbol.second.offset <<
-            setw(15) << symbol.second.scope <<
-            endl;
+        outputFile << symbol.second.Serialize().rdbuf();
+//        outputFile << right <<
+//            setw(15) << "-" <<
+//            setw(15) << symbol.second.name <<
+//            setw(15) << symbol.second.defined <<
+//            setw(15) << symbol.second.sectionName <<
+//            setw(15) << symbol.second.offset <<
+//            setw(15) << symbol.second.scope <<
+//            endl;
     }
+
+    outputFile << "%END%" << endl;
 
     outputFile << endl;
 
+    outputFile << "%RELOCATIONS SECTION%" << endl;
+
     outputFile << left << "  " <<
         setw(15) << "Relocation" <<
+        setw(15) << "SymbolName" <<
         setw(15) << "SectionName" <<
         setw(15) << "Offset" <<
         setw(15) << "Type" <<
@@ -744,20 +752,32 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
 
     for (auto &rel:relocations)
     {
-        outputFile << right <<
-        setw(15) << "-" <<
-        setw(15) << rel.section <<
-        setw(15) << rel.offset <<
-        setw(15) << rel.relocationType <<
-        endl;
+        outputFile << rel.Serialize().rdbuf();
+        //rel.Out(outputFile);
+
+//        outputFile << right <<
+//        setw(15) << "-" <<
+//        setw(15) << rel.section <<
+//        setw(15) << rel.offset <<
+//        setw(15) << rel.relocationType <<
+//        endl;
     }
+
+    outputFile << "%END%" << endl;
 
     outputFile << endl << left;
 
+    outputFile << "%SECTIONS SECTION%" << endl;
+
     for (auto &section:sections)
     {
-        outputFile << section.second;
+        outputFile << section.second.Serialize().rdbuf();
+        //section.second.Out(outputFile);
+
+//        /outputFile << section.second;
     }
+
+    outputFile << "%END%" << endl;
 
 }
 
@@ -984,7 +1004,7 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
                     throw runtime_error("Symbol not defined! " + nextToken);
                 }
 
-                Relocation rel(sectionName, locationCounter, RelocationType::LONG);
+                Relocation rel(nextToken, sectionName, locationCounter, RelocationType::LONG);
                 relocations.push_back(rel);
 
                 sectionPair->second.WriteZeros(locationCounter, 4);
@@ -1050,6 +1070,7 @@ void Compiler::HandleInstruction(string instructionName, string currentSection, 
 
         InstructionType instructionType = (InstructionType) instructionTypesMap[shortInstructionName];
 
+        instruction.instrCode.binaryCode = 0;
         instruction.instrCode.instruction.instr = instructionCodes[shortInstructionName];
         instruction.instrCode.instruction.cond = branchCodes[condition];
         instruction.instrCode.instruction.flag = (setFlags?1:0);
@@ -1086,7 +1107,7 @@ void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSect
         throw runtime_error("Error, symbol already defined ! " + symName);
     }
 
-    Symbol sym(symName, symDefined, symSection, symSectionName, symScope, locationCounter);
+    Symbol sym(symName, symDefined, symSectionName, symScope, locationCounter);
 
     symbols.insert({symName, sym});
 }

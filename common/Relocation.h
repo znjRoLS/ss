@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include "Enums.h"
 
@@ -16,13 +17,19 @@ class Relocation {
 
 public:
 
-    Relocation(string, u_int32_t, RelocationType);
+    Relocation(string, string, u_int32_t, RelocationType);
 
     string section;
+    string symbolName;
     u_int32_t offset;
     RelocationType relocationType;
 
     friend ostream& operator<<(ostream& out, Relocation&);
+
+    stringstream Serialize();
+
+    static Relocation Deserialize(string);
+
 };
 
 

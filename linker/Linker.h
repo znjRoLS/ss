@@ -9,6 +9,12 @@
 #include <iostream>
 #include <fstream>
 
+#include "Enums.h"
+#include "Section.h"
+#include "Symbol.h"
+#include "Relocation.h"
+
+
 using namespace std;
 
 class Linker {
@@ -17,13 +23,18 @@ public:
     void Link(vector<ifstream> &inputFiles, ofstream &outputFile);
 
 private:
-    void LinkFile(ifstream &inputFile);
+    void LoadFile(ifstream &inputFile);
 
-    void CheckOutputFile();
+    void FixRelocations();
 
     void WriteOutputFile(ofstream &outputFile);
 
     static ofstream logFile;
+
+    unordered_map<string,Section> sections;
+    unordered_map<string,Symbol> symbols;
+    vector<Relocation> relocations;
+
 
 };
 

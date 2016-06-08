@@ -3,6 +3,7 @@
 //
 
 #include "Linker.h"
+#include "ObjectFile.h"
 
 #include <exception>
 #include <iostream>
@@ -18,11 +19,11 @@ void Linker::Link(vector<ifstream> &inputFiles, ofstream &outputFile)
         for (auto &inputFile: inputFiles)
         {
             logFile << "Linking file " << endl;
-            LinkFile(inputFile);
+            LoadFile(inputFile);
         }
 
         logFile << "Check output " << endl;
-        CheckOutputFile();
+        FixRelocations();
 
         logFile << "Write output " << endl;
         WriteOutputFile(outputFile);
@@ -36,14 +37,49 @@ void Linker::Link(vector<ifstream> &inputFiles, ofstream &outputFile)
 
 }
 
-void Linker::LinkFile(ifstream &inputFile)
+void Linker::LoadFile(ifstream &inputFile)
 {
 
+    ObjectFile objectFile;
+
+    objectFile.LoadFromFile(inputFile);
+
+    for (auto &section: objectFile.sections)
+    {
+        sections.insert({section.first, section.second});
+    }
+
+    for (auto &symbol: objectFile.symbols)
+    {
+        symbols.insert({symbol.first, symbol.second});
+    }
+
+    for (auto &relocation: objectFile.relocations)
+    {
+        relocations.push_back(relocation);
+    }
+
+
+    for (auto &symbol :symbols)
+    {
+        logFile << symbol.second;
+    }
+
+
+    for (int i = 0; i < relocations.size() ; i++)
+    {
+        logFile << (relocations[i]);
+    }
+
+    for (auto &section: sections)
+    {
+        logFile << section.second;
+    }
 
 
 }
 
-void Linker::CheckOutputFile()
+void Linker::FixRelocations()
 {
 
 }

@@ -6,6 +6,7 @@
 #define SS_SECTION_H
 
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -23,6 +24,10 @@ public:
     u_int8_t *memory;
 
     friend ostream& operator<<(ostream&, Section&);
+
+    stringstream Serialize();
+
+    static Section Deserialize(string);
 
 };
 
