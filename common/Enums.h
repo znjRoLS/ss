@@ -17,7 +17,7 @@ enum ScopeType { GLOBAL, LOCAL };
 
 enum RelocationType { LONG, INSTR };
 
-namespace Instruction
+namespace InstructionCodes
 {
     enum InstructionSymbol {
         INT = 0,

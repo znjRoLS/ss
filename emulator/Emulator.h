@@ -10,26 +10,25 @@
 #include <fstream>
 
 #include "Section.h"
+#include "Program.h"
 
 using namespace std;
 
 class Emulator {
 public:
+    Emulator();
     void Emulate(ifstream &inputFiles);
 
 private:
 
+
     void Execute();
 
-    void LoadSection(ifstream&);
+//    /void LoadSection(ifstream&);
 
     static ofstream logFile;
 
-    Section programBinary;
-
-    u_int32_t startPoint;
-
-    u_int32_t programCounter;
+    Program program;
 
 
 };
