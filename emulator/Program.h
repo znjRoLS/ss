@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <functional>
+#include <chrono>
 
 #include "Enums.h"
 #include "Section.h"
@@ -20,9 +21,23 @@ public:
     Program();
 
     void LoadSection(istream &);
+    void LoadDefaultIVT(ifstream &);
 
     static const size_t MEMORY_SIZE = 1024 * 1024;
+    static const size_t STACK_START = 128 * 1024;
     static const size_t STACK_SIZE = 8 * 1024;
+
+    static const size_t IVT_SIZE = 1024;
+    static const size_t IVT_START = 256 * 1024;
+
+    static const size_t KEYBOARD_POS = 0x1000;
+    static const size_t KEYBOARD_STATUS_POS = 0x1010;
+    static const u_int32_t KEYBOARD_STATUS_MASK = 1L << 9;
+    static const size_t OUTPUT_POS = 0x2000;
+
+    static const size_t IRET_CODE = 0x230ee;
+
+    static const size_t CODE_START = 16 * 4;
 
     u_int32_t registers[16];
 
@@ -32,13 +47,13 @@ public:
         u_int32_t val;
 
         struct{
-            u_int32_t I:1, :27, Z:1, O:1, C:1, N:1;
+            u_int32_t I:1, :1, T:1, :25, Z:1, O:1, C:1, N:1;
         };
     } PSW;
 
     u_int8_t memory[MEMORY_SIZE];
 
-    u_int8_t stack[STACK_SIZE];
+    //u_int8_t stack[STACK_SIZE];
 
     Section programSection;
 
@@ -66,6 +81,16 @@ public:
 
     void SetRegister(u_int32_t val, u_int32_t ind);
     u_int32_t GetRegister(u_int32_t ind);
+
+    void HandleInterrupts();
+
+    chrono::time_point<chrono::system_clock> executionStart;
+    chrono::time_point<chrono::system_clock> lastTimerExecution;
+
+    void TimerInterrupt();
+
+    //TODO: hardcoded
+    u_int32_t IVT [16];
 
 };
 

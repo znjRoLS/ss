@@ -19,7 +19,7 @@ ostream& operator<<(ostream& out, InstructionCodes::InstructionCondition s);
 
 Program::Program():
     programSection("output", 0),
-    currentInstruction(InstructionCodes::NO_INSTRUCTION, InstructionCodes::NO_CONDITION, false)
+    currentInstruction(InstructionCodes::HALT, InstructionCodes::NO_CONDITION, false)
 {
     instructionExecutors =
         {
@@ -28,7 +28,7 @@ Program::Program():
 
                     StackPush(PSW.val);
                     LR = PC;
-                    PC = currentInstruction.instrCode.instruction_int.src;
+                    PC = currentInstruction.instrCode.instruction_int.src + CODE_START;
 
                 }
             },
@@ -300,7 +300,7 @@ Program::Program():
 
                     LR = PC;
 
-                    PC = GetRegister(regDest) + imm;
+                    PC = GetRegister(regDest) + imm + CODE_START;
                 }
             },
             {
@@ -399,24 +399,24 @@ u_int32_t Program::SignExt(u_int32_t val, size_t size)
 
 void Program::StackPush(u_int32_t val)
 {
-    if (SP <= 0)
+    if (SP <= STACK_START)
     {
         throw runtime_error("Stack overflow !");
     }
 
     SP-=4;
-    memcpy(stack + SP, &val, 4);
+    memcpy(memory + SP, &val, 4);
 }
 
 u_int32_t Program::StackPop()
 {
-    if (SP >= STACK_SIZE)
+    if (SP >= STACK_START + STACK_SIZE)
     {
         throw runtime_error("Stack underflow !");
     }
 
     u_int32_t ret;
-    memcpy(&ret, stack+SP, 4);
+    memcpy(&ret, memory+SP, 4);
     return ret;
 }
 
@@ -459,6 +459,11 @@ void Program::LoadSection(istream &inputFile)
             programSection = Section::Deserialize(sectionCumulate);
 
             sectionCumulate.clear();
+
+            Emulator::logFile << "Copied code to " << CODE_START <<" " << (int)memory[64] <<  endl;
+            memcpy(memory + CODE_START, programSection.memory, programSection.size);
+
+            startPoint += CODE_START;
         }
 
         else
@@ -471,21 +476,25 @@ void Program::LoadSection(istream &inputFile)
 void Program::Init()
 {
     PC = startPoint;
-    SP = STACK_SIZE;
+    SP = STACK_SIZE + STACK_START;
 
     PSW.val = 0;
+    PSW.T = 1;
+
+    executionStart = chrono::system_clock::now();
+    lastTimerExecution = executionStart;
 }
 
 void Program::ReadNext()
 {
     u_int32_t currentCode;
 
-    if (PC >= programSection.size + 4)
-    {
-        throw runtime_error("Out of scope ! Please use halt at the end of program.");
-    }
+//    if (PC >= programSection.size + 4)
+//    {
+//        throw runtime_error("Out of scope ! Please use halt at the end of program.");
+//    }
 
-    memcpy(&currentCode, programSection.memory + PC, 4);
+    memcpy(&currentCode, memory + PC, 4);
     currentInstruction = Instruction::Deserialize(currentCode);
 
     PC += 4;
@@ -493,7 +502,7 @@ void Program::ReadNext()
 
 bool Program::IsEnd()
 {
-    return (currentInstruction.instrCode.instruction.instr == InstructionCodes::NOT);
+    return (currentInstruction.instrCode.instruction.instr == InstructionCodes::HALT);
 
 }
 
@@ -524,7 +533,48 @@ void Program::ExecuteCurrent()
     Emulator::logFile << "SP: " << hex << SP << endl;
     Emulator::logFile << "PSW: " << hex << PSW.val << endl;
 
+    HandleInterrupts();
+
 }
+
+void Program::HandleInterrupts()
+{
+
+    chrono::time_point<chrono::system_clock> timeNow = chrono::system_clock::now();
+    chrono::duration<double> elapsed = timeNow - lastTimerExecution;
+    //TODO: hardcoded
+    Emulator::logFile << dec << "elapsed: " << elapsed.count() << endl;
+    if (elapsed.count() >= 1.0)
+    {
+        lastTimerExecution = timeNow;
+        TimerInterrupt();
+    }
+
+
+}
+
+void Program::TimerInterrupt()
+{
+    if (PSW.I == 1)
+    {
+        Emulator::logFile << "Masked interrupts" << endl;
+        return;
+    }
+    if (PSW.T == 0)
+    {
+        Emulator::logFile << "Masked timer interrupt" << endl;
+        return;
+    }
+
+    Emulator::logFile << "Timer interrupt !" << endl;
+
+    StackPush(PSW.val);
+    LR = PC;
+    StackPush(LR);
+    memcpy(&PC, memory + 4, 4);
+}
+
+
 
 void Program::SetRegister(u_int32_t val, u_int32_t ind)
 {
@@ -559,5 +609,72 @@ u_int32_t Program::GetRegister(u_int32_t ind)
             return PSW.val;
         default:
             return registers[ind];
+    }
+}
+
+
+void Program::LoadDefaultIVT(ifstream &inputFile)
+{
+
+    for (int i = 0 ; i < 16 ; i ++)
+    {
+        u_int32_t ivtPoint = IVT_START + i*IVT_SIZE;
+        //Emulator::logFile << "Copied code to " << 4*i << " " << (int)memory[64] << endl;
+        memcpy(memory + 4*i, &ivtPoint, 4);
+
+        //Emulator::logFile << "Copied code to " << ivtPoint << " " << (int)memory[64] << endl;
+        memcpy(memory + ivtPoint, &IRET_CODE, 4);
+    }
+
+    if (inputFile.is_open()) {
+        string line;
+        string sectionCumulate;
+        bool outputSection = false;
+        Section currentSection("random", 0);
+
+        while (getline(inputFile, line)) {
+            if (!outputSection) {
+                if (line == "%SECTIONS SECTION%") {
+                    outputSection = true;
+                }
+                continue;
+            }
+            if (line == "%END%") {
+                outputSection = false;
+                continue;
+            }
+
+            if (line == ".end") {
+                currentSection = Section::Deserialize(sectionCumulate);
+
+                sectionCumulate.clear();
+
+                if (currentSection.name == ".text.start") {
+                    //Emulator::logFile << "Copied code to " << IVT_START <<" " << (int)memory[64] <<  endl;
+                    memcpy(memory + IVT_START, currentSection.memory, currentSection.size);
+                    Emulator::logFile << "yay, loaded start ivt" << endl;
+                }
+                else if (currentSection.name == ".text.timer") {
+                    //Emulator::logFile << "Copied code to " << IVT_START + 1*IVT_SIZE <<" " << (int)memory[64] <<  endl;
+                    memcpy(memory + IVT_START + 1*IVT_SIZE, currentSection.memory, currentSection.size);
+                    Emulator::logFile << "yay, loaded timer ivt" << endl;
+                }
+                else if (currentSection.name == ".text.illegal") {
+                    //Emulator::logFile << "Copied code to " << IVT_START + 2*IVT_SIZE <<" " << (int)memory[64] <<  endl;
+                    memcpy(memory + IVT_START + 2*IVT_SIZE, currentSection.memory, currentSection.size);
+                    Emulator::logFile << "yay, loaded illegal ivt" << endl;
+                }
+                else if (currentSection.name == ".text.keyboard") {
+                    //Emulator::logFile << "Copied code to " << IVT_START + 3*IVT_SIZE <<" " << (int)memory[64] <<  endl;
+                    memcpy(memory + IVT_START + 3*IVT_SIZE, currentSection.memory, currentSection.size);
+                    Emulator::logFile << "yay, loaded keyboard ivt" << endl;
+                }
+
+            }
+
+            else {
+                sectionCumulate += line + "\n";
+            }
+        }
     }
 }

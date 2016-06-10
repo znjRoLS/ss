@@ -24,6 +24,13 @@ void Emulator::Emulate(ifstream &inputFiles)
         logFile << "Loading section" << endl;
         program.LoadSection(inputFiles);
 
+
+        ifstream defaultIVT("object_files/defaultIVT.o");
+
+        logFile << "Load default ivt" << endl;
+        program.LoadDefaultIVT(defaultIVT);
+
+
         logFile << "Started executing" << endl;
         Execute();
 
@@ -43,10 +50,12 @@ void Emulator::Execute()
 {
     program.Init();
 
+    program.ReadNext();
+
     while(!program.IsEnd())
     {
-        program.ReadNext();
-
         program.ExecuteCurrent();
+
+        program.ReadNext();
     }
 }

@@ -20,7 +20,7 @@ Instruction::Instruction(InstructionSymbol _instr, InstructionCondition _conditi
 
 Instruction Instruction::Deserialize(u_int32_t instructionCode)
 {
-    Instruction instruction(NO_INSTRUCTION, NO_CONDITION, false);
+    Instruction instruction(InstructionCodes::HALT, NO_CONDITION, false);
 
     instruction.instrCode.binaryCode = instructionCode;
 

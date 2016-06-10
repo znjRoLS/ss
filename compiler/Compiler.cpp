@@ -68,7 +68,8 @@ unordered_map<string, u_int8_t> Compiler::instructionCodes =
         {"shr",  InstructionCodes::MOVSHIFT},
         {"shl",  InstructionCodes::MOVSHIFT},
         {"ldch", InstructionCodes::LOADC},
-        {"ldcl", InstructionCodes::LOADC}
+        {"ldcl", InstructionCodes::LOADC},
+        {"halt", InstructionCodes::HALT}
     };
 
 unordered_map<string, u_int8_t> Compiler::branchCodes =
@@ -105,7 +106,8 @@ unordered_map<string, int> Compiler::instructionTypesMap =
         {"shr",  InstructionType::MOVSHIFT},
         {"shl",  InstructionType::MOVSHIFT},
         {"ldch", InstructionType::LOADC},
-        {"ldcl", InstructionType::LOADC}
+        {"ldcl", InstructionType::LOADC},
+        {"halt", InstructionType::HALT}
     };
 
 
@@ -133,7 +135,7 @@ unordered_map<int, regex> Compiler::tokenParsers =
         { OPERAND_REGSPECINCDEC, regex("^(?:(?:(?:\\+\\+|--)(pc|sp|lr|psw))|(?:(pc|sp|lr|psw)(?:\\+\\+|--)))$")},
         { OPERAND_DEC, regex("^([0-9]+)$")},
         { OPERAND_HEX, regex("^(0x[0-9abcdef]+)$")},
-        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl|ldc)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
+        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl|ldc|halt|ret|iret|pop|push)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
         { SYMBOLDIFF, regex("^([a-zA-Z_][a-zA-Z0-9]*)-([a-zA-Z_][a-zA-Z0-9]*)$")}
     };
 
@@ -179,6 +181,84 @@ Compiler::Compiler()
                 ldclInstr.push(to_string(low));
 
                 return vector<queue<string> >({ldchInstr, ldclInstr});
+            }
+            },
+            {"ret", [&](queue<string> &tokens){
+                if (tokens.size() != 0)
+                {
+                    throw runtime_error("Not valid instruction! ret");
+                }
+
+                queue<string> movInstr;
+                movInstr.push("mov");
+                movInstr.push("pc");
+                movInstr.push("lr");
+
+
+                return vector<queue<string> >({movInstr});
+            }
+            },
+
+            {"iret", [&](queue<string> &tokens){
+                if (tokens.size() != 0)
+                {
+                    throw runtime_error("Not valid instruction! iret");
+                }
+
+
+                queue<string> movInstr;
+                movInstr.push("movs");
+                movInstr.push("pc");
+                movInstr.push("lr");
+
+
+                return vector<queue<string> >({movInstr});
+            }
+            },
+
+            {"pop", [&](queue<string> &tokens){
+                if (tokens.size() != 1)
+                {
+                    throw runtime_error("Not valid instruction! pop");
+                }
+
+                string firstParam;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, firstParam, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+
+
+                queue<string> movInstr;
+                movInstr.push("ldr");
+                movInstr.push(firstParam);
+                movInstr.push("sp++");
+
+
+                return vector<queue<string> >({movInstr});
+            }
+            },
+
+            {"push", [&](queue<string> &tokens){
+                if (tokens.size() != 1)
+                {
+                    throw runtime_error("Not valid instruction! push");
+                }
+
+                string firstParam;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, firstParam, operand, operandType, {OPERAND_REG, OPERAND_REGSPEC});
+
+
+                queue<string> movInstr;
+                movInstr.push("str");
+                movInstr.push(firstParam);
+                movInstr.push("--sp");
+
+
+                return vector<queue<string> >({movInstr});
             }
             },
         };
@@ -386,6 +466,10 @@ Compiler::Compiler()
 
                 instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
             }
+            },
+            {InstructionType::HALT, [&](Instruction &instr, queue<string> &tokens) {
+
+                }
             },
         };
 }

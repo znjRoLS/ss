@@ -232,7 +232,7 @@ ostream& operator<<(ostream& out, InstructionCodes::InstructionSymbol s)
         case InstructionCodes::InstructionSymbol::NOT: return out << "NOT";
         case InstructionCodes::InstructionSymbol::TEST: return out << "TEST";
         case InstructionCodes::InstructionSymbol::LDRSTR: return out << "LDRSTR";
-        case InstructionCodes::InstructionSymbol::NO_INSTRUCTION: return out << "NO_INSTRUCTION";
+        case InstructionCodes::InstructionSymbol::HALT: return out << "HALT";
         case InstructionCodes::InstructionSymbol::CALL: return out << "CALL";
         case InstructionCodes::InstructionSymbol::INOUT: return out << "INOUT";
         case InstructionCodes::InstructionSymbol::MOVSHIFT: return out << "MOVSHIFT";

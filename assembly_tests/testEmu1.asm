@@ -11,3 +11,4 @@ main:
     ldc r4, testInstr
     call r4, 0
     add r1, 345
+    halt
