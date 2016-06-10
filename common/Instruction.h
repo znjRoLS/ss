@@ -67,7 +67,7 @@ public:
 
     } instrCode;
 
-    Instruction(InstructionSymbol _name, InstructionCondition _condition, bool _setFlags);
+    Instruction(InstructionSymbol , InstructionCondition _condition, bool _setFlags, string _name = "");
 
     friend ostream &operator<<(ostream &, Instruction &);
 
@@ -77,6 +77,7 @@ public:
     InstructionSymbol instructionSymbol;
     InstructionCondition instructionCondition;
     bool setFlags;
+    string name;
     vector<string> parameters;
 
     static Instruction Deserialize(u_int32_t instructionCode);

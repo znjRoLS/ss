@@ -29,7 +29,7 @@ void Emulator::Emulate(ifstream &inputFiles)
 
     }
 
-    catch(exception e)
+    catch(exception &e)
     {
         cerr << e.what() << endl;
         logFile << "ERROR: " << e.what() << endl;
@@ -41,14 +41,9 @@ void Emulator::Emulate(ifstream &inputFiles)
 
 void Emulator::Execute()
 {
-
-
-
-
-
     program.Init();
 
-    while(true)
+    while(!program.IsEnd())
     {
         program.ReadNext();
 

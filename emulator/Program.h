@@ -22,18 +22,29 @@ public:
     void LoadSection(istream &);
 
     static const size_t MEMORY_SIZE = 1024 * 1024;
+    static const size_t STACK_SIZE = 8 * 1024;
 
     u_int32_t registers[16];
 
-    u_int32_t PC, LR, PSW, SP;
+    u_int32_t PC, LR, SP;
 
-    u_int32_t memory[MEMORY_SIZE];
+    union {
+        u_int32_t val;
+
+        struct{
+            u_int32_t I:1, :27, Z:1, O:1, C:1, N:1;
+        };
+    } PSW;
+
+    u_int8_t memory[MEMORY_SIZE];
+
+    u_int8_t stack[STACK_SIZE];
 
     Section programSection;
 
     u_int32_t startPoint;
 
-    u_int32_t programCounter;
+    //u_int32_t programCounter;
 
     Instruction currentInstruction;
 
@@ -44,6 +55,17 @@ public:
 
     unordered_map<int, function<void()> > instructionExecutors;
 
+
+    void StackPush(u_int32_t);
+    u_int32_t StackPop();
+
+    u_int32_t SignExt(u_int32_t val, size_t size);
+
+    u_int32_t GetMemory(u_int32_t ind);
+    void SetMemory(u_int32_t val, u_int32_t ind);
+
+    void SetRegister(u_int32_t val, u_int32_t ind);
+    u_int32_t GetRegister(u_int32_t ind);
 };
 
 

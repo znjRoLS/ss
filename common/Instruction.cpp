@@ -7,10 +7,11 @@
 #include <regex>
 
 
-Instruction::Instruction(InstructionSymbol _name, InstructionCondition _condition, bool _setFlags):
-        instructionSymbol(_name),
+Instruction::Instruction(InstructionSymbol _instr, InstructionCondition _condition, bool _setFlags, string _name):
+        instructionSymbol(_instr),
         instructionCondition(_condition),
-        setFlags(_setFlags)
+        setFlags(_setFlags),
+        name(_name)
 {
 
 };

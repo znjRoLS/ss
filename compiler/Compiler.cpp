@@ -42,63 +42,63 @@ void split(const string &s, const char* delim, vector<string> & v){
 
 unordered_map<string, u_int8_t> Compiler::instructionCodes =
     {
-        {"int",  Instruction::INT},
-        {"add",  Instruction::ADD},
-        {"sub",  Instruction::SUB},
-        {"mul",  Instruction::MUL},
-        {"div",  Instruction::DIV},
-        {"cmp",  Instruction::CMP},
-        {"and",  Instruction::AND},
-        {"or",   Instruction::OR},
-        {"not",  Instruction::NOT},
-        {"test", Instruction::TEST},
-        {"ldr",  Instruction::LDRSTR},
-        {"str",  Instruction::LDRSTR},
-        {"call", Instruction::CALL},
-        {"in",   Instruction::INOUT},
-        {"out",  Instruction::INOUT},
-        {"mov",  Instruction::MOVSHIFT},
-        {"shr",  Instruction::MOVSHIFT},
-        {"shl",  Instruction::MOVSHIFT},
-        {"ldch", Instruction::LOADC},
-        {"ldcl", Instruction::LOADC}
+        {"int",  InstructionCodes::INT},
+        {"add",  InstructionCodes::ADD},
+        {"sub",  InstructionCodes::SUB},
+        {"mul",  InstructionCodes::MUL},
+        {"div",  InstructionCodes::DIV},
+        {"cmp",  InstructionCodes::CMP},
+        {"and",  InstructionCodes::AND},
+        {"or",   InstructionCodes::OR},
+        {"not",  InstructionCodes::NOT},
+        {"test", InstructionCodes::TEST},
+        {"ldr",  InstructionCodes::LDRSTR},
+        {"str",  InstructionCodes::LDRSTR},
+        {"call", InstructionCodes::CALL},
+        {"in",   InstructionCodes::INOUT},
+        {"out",  InstructionCodes::INOUT},
+        {"mov",  InstructionCodes::MOVSHIFT},
+        {"shr",  InstructionCodes::MOVSHIFT},
+        {"shl",  InstructionCodes::MOVSHIFT},
+        {"ldch", InstructionCodes::LOADC},
+        {"ldcl", InstructionCodes::LOADC}
     };
 
 unordered_map<string, u_int8_t> Compiler::branchCodes =
     {
-        {"eq", Instruction::EQ},
-        {"ne", Instruction::NE},
-        {"gt", Instruction::GT},
-        {"ge", Instruction::GE},
-        {"lt", Instruction::LT},
-        {"le", Instruction::LE},
-        {"",   Instruction::NO_CONDITION},
-        {"al", Instruction::AL},
+        {"eq", InstructionCodes::EQ},
+        {"ne", InstructionCodes::NE},
+        {"gt", InstructionCodes::GT},
+        {"ge", InstructionCodes::GE},
+        {"lt", InstructionCodes::LT},
+        {"le", InstructionCodes::LE},
+        {"",   InstructionCodes::NO_CONDITION},
+        {"al", InstructionCodes::AL},
     };
 
 
 unordered_map<string, int> Compiler::instructionTypesMap =
     {
-        {"int",  INT},
-        {"add",  ARITHMETIC},
-        {"sub",  ARITHMETIC},
-        {"mul",  ARITHMETIC},
-        {"div",  ARITHMETIC},
-        {"cmp",  ARITHMETIC},
-        {"and",  LOGICAL},
-        {"or",   LOGICAL},
-        {"not",  LOGICAL},
-        {"test", LOGICAL},
-        {"ldr",  LOADSTORE},
-        {"str",  LOADSTORE},
-        {"call", CALL},
-        {"in",   IO},
-        {"out",  IO},
-        {"mov",  MOVSHIFT},
-        {"shr",  MOVSHIFT},
-        {"shl",  MOVSHIFT},
-        {"ldch", LOADC},
-        {"ldcl", LOADC}
+        {"int",  InstructionType::INT},
+        {"add",  InstructionType::ARITHMETIC},
+        {"sub",  InstructionType::ARITHMETIC},
+        {"mul",  InstructionType::ARITHMETIC},
+        {"div",  InstructionType::ARITHMETIC},
+        {"cmp",  InstructionType::ARITHMETIC},
+        {"and",  InstructionType::LOGICAL},
+        {"or",   InstructionType::LOGICAL},
+        {"not",  InstructionType::LOGICAL},
+        {"test", InstructionType::LOGICAL},
+        {"ldr",  InstructionType::LOADSTORE},
+        {"str",  InstructionType::LOADSTORE},
+        {"call", InstructionType::CALL},
+        {"in",   InstructionType::IO},
+        {"out",  InstructionType::IO},
+        {"mov",  InstructionType::MOVSHIFT},
+        {"shr",  InstructionType::MOVSHIFT},
+        {"shl",  InstructionType::MOVSHIFT},
+        {"ldch", InstructionType::LOADC},
+        {"ldcl", InstructionType::LOADC}
     };
 
 
@@ -124,8 +124,8 @@ unordered_map<int, regex> Compiler::tokenParsers =
         { OPERAND_REGINCDEC, regex("^(?:(?:(?:\\+\\+|--)r([0-9]{1,2}))|(?:r([0-9]{1,2})(?:\\+\\+|--)))$")},
         { OPERAND_REGSPEC, regex("^(pc|sp|lr|psw)")},
         { OPERAND_REGSPECINCDEC, regex("^(?:(?:(?:\\+\\+|--)(pc|sp|lr|psw))|(?:(pc|sp|lr|psw)(?:\\+\\+|--)))$")},
-        { OPERAND_DEC, regex("^([0-9]*)$")},
-        { OPERAND_HEX, regex("^(0x[0-9abcdef]*)$")},
+        { OPERAND_DEC, regex("^([0-9]+)$")},
+        { OPERAND_HEX, regex("^(0x[0-9abcdef]+)$")},
         { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
         { SYMBOLDIFF, regex("^([a-zA-Z_][a-zA-Z0-9]*)-([a-zA-Z_][a-zA-Z0-9]*)$")}
     };
@@ -134,7 +134,7 @@ Compiler::Compiler()
 {
     instructionsHandlers =
         {
-            {INT, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::INT, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -144,7 +144,7 @@ Compiler::Compiler()
                 instr.instrCode.instruction_int.src = operand;
             }
             },
-            {ARITHMETIC, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::ARITHMETIC, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token1;
                 u_int32_t operand1;
@@ -194,7 +194,7 @@ Compiler::Compiler()
 
             }
             },
-            {LOGICAL, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::LOGICAL, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -217,7 +217,7 @@ Compiler::Compiler()
                 }
             }
             },
-            {LOADSTORE, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::LOADSTORE, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -268,7 +268,7 @@ Compiler::Compiler()
                 instr.instrCode.instruction_ldr_str.imm = operand;
             }
             },
-            {CALL, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::CALL, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -281,7 +281,7 @@ Compiler::Compiler()
                 instr.instrCode.instruction_call.imm = operand;
             }
             },
-            {IO, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::IO, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -296,7 +296,7 @@ Compiler::Compiler()
                 instr.instrCode.instruction_in_out.io = (instr.name == "in")?1:0;
             }
             },
-            {MOVSHIFT, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::MOVSHIFT, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -315,9 +315,13 @@ Compiler::Compiler()
 
                     instr.instrCode.instruction_mov_shr_shl.lr = (instr.name == "shl")?1:0;
                 }
+
+                else{
+                    instr.instrCode.instruction_mov_shr_shl.imm = 0;
+                }
             }
             },
-            {LOADC, [&](Instruction &instr, queue<string> &tokens) {
+            {InstructionType::LOADC, [&](Instruction &instr, queue<string> &tokens) {
 
                 string token;
                 u_int32_t operand;
@@ -1034,7 +1038,9 @@ void Compiler::GetOperand(queue<string> &tokens, string &token, u_int32_t &opera
 
     if (find(operandAllowed.begin(), operandAllowed.end(), operandType) == operandAllowed.end())
     {
-        throw runtime_error("Illegal token: " + token);
+        stringstream ss;
+        ss << "Illegal token: " << token << " of type " << operandType;
+        throw runtime_error(ss.str());
     }
 
     operand = ParseOperand(token, operandImmSize);
@@ -1047,13 +1053,15 @@ void Compiler::HandleInstruction(string instructionName, string currentSection, 
 {
     smatch base_match;
 
+
+    //TODO: refactor whole function
     if (regex_match(instructionName, base_match, tokenParsers[INSTRUCTION])) {
 
         string shortInstructionName = base_match[1];
         string condition = base_match[2];
         bool setFlags = (base_match[3] == "s");
 
-        Instruction instruction(shortInstructionName, condition, setFlags);
+        Instruction instruction((InstructionSymbol) instructionCodes[shortInstructionName], (InstructionCondition) branchCodes[condition], setFlags, shortInstructionName);
 
         if (instructionTypesMap.find(shortInstructionName) == instructionTypesMap.end())
         {

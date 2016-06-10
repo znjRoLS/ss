@@ -7,7 +7,7 @@
 
 #include "../compiler/Compiler.h"
 #include "Enums.h"
-#include "../compiler/Instruction.h"
+#include "Instruction.h"
 #include "Symbol.h"
 
 
@@ -153,7 +153,9 @@ ostream& operator<<(ostream& out, InstructionType s)
 
 ostream& operator<<(ostream& out, Instruction& instr)
 {
-    out << "Instruction: " << instr.name << endl;
+    out << "Instruction: " << instr.instructionSymbol << endl;
+    out << "Condition: " << instr.instructionCondition << endl;
+    out << "setflags: " << instr.setFlags << endl;
 
     for (auto &temp: instr.parameters)
         out << "\t" << temp  << endl;
@@ -203,4 +205,43 @@ ostream& operator<<(ostream& out, Section& section)
     }
 
     out << endl << endl;
+}
+
+
+ostream& operator<<(ostream& out, InstructionCodes::InstructionSymbol s)
+{
+    switch(s)
+    {
+        case InstructionCodes::InstructionSymbol::INT: return out << "INT";
+        case InstructionCodes::InstructionSymbol::ADD: return out << "ADD";
+        case InstructionCodes::InstructionSymbol::SUB: return out << "SUB";
+        case InstructionCodes::InstructionSymbol::MUL: return out << "MUL";
+        case InstructionCodes::InstructionSymbol::DIV: return out << "DIV";
+        case InstructionCodes::InstructionSymbol::CMP: return out << "CMP";
+        case InstructionCodes::InstructionSymbol::AND: return out << "AND";
+        case InstructionCodes::InstructionSymbol::OR: return out << "OR";
+        case InstructionCodes::InstructionSymbol::NOT: return out << "NOT";
+        case InstructionCodes::InstructionSymbol::TEST: return out << "TEST";
+        case InstructionCodes::InstructionSymbol::LDRSTR: return out << "LDRSTR";
+        case InstructionCodes::InstructionSymbol::NO_INSTRUCTION: return out << "NO_INSTRUCTION";
+        case InstructionCodes::InstructionSymbol::CALL: return out << "CALL";
+        case InstructionCodes::InstructionSymbol::INOUT: return out << "INOUT";
+        case InstructionCodes::InstructionSymbol::MOVSHIFT: return out << "MOVSHIFT";
+        case InstructionCodes::InstructionSymbol::LOADC: return out << "LOADC";
+    }
+}
+
+ostream& operator<<(ostream& out, InstructionCodes::InstructionCondition s)
+{
+    switch(s)
+    {
+        case InstructionCodes::InstructionCondition::EQ: return out << "EQ";
+        case InstructionCodes::InstructionCondition::NE: return out << "NE";
+        case InstructionCodes::InstructionCondition::GT: return out << "GT";
+        case InstructionCodes::InstructionCondition::GE: return out << "GE";
+        case InstructionCodes::InstructionCondition::LT: return out << "LT";
+        case InstructionCodes::InstructionCondition::LE: return out << "LE";
+        case InstructionCodes::InstructionCondition::NO_CONDITION: return out << "NO_CONDITION";
+        case InstructionCodes::InstructionCondition::AL: return out << "AL";
+    }
 }
