@@ -15,7 +15,7 @@ enum SectionType { START, TEXT, DATA, BSS};
 
 enum ScopeType { GLOBAL, LOCAL };
 
-enum RelocationType { LONG, INSTR };
+enum RelocationType { LONG, LDCRELOC };
 
 namespace InstructionCodes
 {

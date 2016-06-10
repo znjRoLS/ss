@@ -66,6 +66,7 @@ public:
 
     void SetRegister(u_int32_t val, u_int32_t ind);
     u_int32_t GetRegister(u_int32_t ind);
+
 };
 
 

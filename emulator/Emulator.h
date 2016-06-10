@@ -19,6 +19,8 @@ public:
     Emulator();
     void Emulate(ifstream &inputFiles);
 
+    static ofstream logFile;
+
 private:
 
 
@@ -26,7 +28,6 @@ private:
 
 //    /void LoadSection(ifstream&);
 
-    static ofstream logFile;
 
     Program program;
 

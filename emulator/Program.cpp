@@ -5,7 +5,17 @@
 #include "Program.h"
 
 #include <cstring>
-#include <Instruction.h>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include "Instruction.h"
+#include "Emulator.h"
+
+using namespace std;
+
+ostream& operator<<(ostream& out, InstructionCodes::InstructionSymbol s);
+
+ostream& operator<<(ostream& out, InstructionCodes::InstructionCondition s);
 
 Program::Program():
     programSection("output", 0),
@@ -26,7 +36,7 @@ Program::Program():
                 InstructionCodes::ADD, [&](){
 
                     u_int32_t result;
-                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.src;
+                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.dst;
                     result = GetRegister(regDest);
 
                     u_int32_t firstOperand = result;
@@ -62,7 +72,7 @@ Program::Program():
                 InstructionCodes::SUB, [&](){
 
                     u_int32_t result;
-                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.src;
+                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.dst;
                     result = GetRegister(regDest);
 
                     u_int32_t firstOperand = result;
@@ -98,7 +108,7 @@ Program::Program():
                 InstructionCodes::MUL, [&](){
 
                     u_int32_t result;
-                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.src;
+                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.dst;
                     result = GetRegister(regDest);
 
                     u_int32_t firstOperand = result;
@@ -128,7 +138,7 @@ Program::Program():
                 InstructionCodes::DIV, [&](){
 
                     u_int32_t result;
-                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.src;
+                    u_int32_t regDest = currentInstruction.instrCode.instruction_arithmetic_reg.dst;
                     result = GetRegister(regDest);
 
                     u_int32_t firstOperand = result;
@@ -489,7 +499,31 @@ bool Program::IsEnd()
 
 void Program::ExecuteCurrent()
 {
+
+    Emulator::logFile << "Registers: ";
+    for (int i = 0 ; i < 16;  i ++)
+        Emulator::logFile << " " << hex << registers[i];
+
+    Emulator::logFile << endl;
+    Emulator::logFile << "PC: " << hex << PC << endl;
+    Emulator::logFile << "LR: " << hex << LR << endl;
+    Emulator::logFile << "SP: " << hex << SP << endl;
+    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
+
+    Emulator::logFile << "Executing: " << currentInstruction.instructionSymbol << " " << currentInstruction.instructionCondition << " " << currentInstruction.setFlags << " " << currentInstruction.instrCode.binaryCode << endl;
+
     instructionExecutors[currentInstruction.instructionSymbol]();
+
+    Emulator::logFile << "Registers: ";
+    for (int i = 0 ; i < 16;  i ++)
+        Emulator::logFile << " " << hex << registers[i];
+
+    Emulator::logFile << endl;
+    Emulator::logFile << "PC: " << hex << PC << endl;
+    Emulator::logFile << "LR: " << hex << LR << endl;
+    Emulator::logFile << "SP: " << hex << SP << endl;
+    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
+
 }
 
 void Program::SetRegister(u_int32_t val, u_int32_t ind)

@@ -39,6 +39,9 @@ ostream& operator<<(ostream& out, TokenType s)
         case TokenType::INSTRUCTION: return out << "INSTRUCTION";
         case TokenType::SYMBOL: return out << "SYMBOL";
         case TokenType::OPERAND_REG: return out << "OPERAND_REG";
+        case TokenType::OPERAND_REGINCDEC: return out << "OPERAND_REG";
+        case TokenType::OPERAND_REGSPEC: return out << "OPERAND_REG";
+        case TokenType::OPERAND_REGSPECINCDEC: return out << "OPERAND_REG";
         case TokenType::OPERAND_DEC: return out << "OPERAND_DEC";
         case TokenType::OPERAND_HEX: return out << "OPERAND_HEX";
         case TokenType::ILLEGAL: return out << "ILLEGAL";
@@ -65,6 +68,12 @@ istream& operator>>(istream& in, TokenType &s)
         s = TokenType::SYMBOL;
     if (token == "OPERAND_REG")
         s = TokenType::OPERAND_REG;
+    if (token == "OPERAND_REGINCDEC")
+        s = TokenType::OPERAND_REGINCDEC;
+    if (token == "OPERAND_REGSPEC")
+        s = TokenType::OPERAND_REGSPEC;
+    if (token == "OPERAND_REGSPECINCDEC")
+        s = TokenType::OPERAND_REGSPECINCDEC;
     if (token == "OPERAND_DEC")
         s = TokenType::OPERAND_DEC;
     if (token == "OPERAND_HEX")
@@ -118,7 +127,7 @@ ostream& operator<<(ostream& out, RelocationType s)
     switch(s)
     {
         case RelocationType::LONG: return out << "LONG";
-        case RelocationType::INSTR: return out << "INSTR";
+        case RelocationType::LDCRELOC: return out << "LDCRELOC";
     }
 }
 
@@ -129,8 +138,8 @@ istream& operator>>(istream& in, RelocationType &s)
 
     if (token == "LONG")
         s = RelocationType::LONG;
-    if (token == "INSTR")
-        s = RelocationType::INSTR;
+    if (token == "LDCRELOC")
+        s = RelocationType::LDCRELOC;
 
     return in;
 }

@@ -8,5 +8,6 @@ main:
     ldcl r1, 0
     add r1, 0x1234
     sub r1, 0x1230
-    call testInstr
+    ldc r4, testInstr
+    call r4, 0
     add r1, 345

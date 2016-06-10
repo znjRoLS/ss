@@ -61,6 +61,15 @@ private:
     static unordered_map<string, u_int8_t> branchCodes;
     static unordered_map<string, int> instructionTypesMap;
     static unordered_map<string, u_int32_t> specialRegisterValues;
+    unordered_map<string, function<vector<queue<string> >(queue<string>&)> > instructionMappers;
+    static unordered_map<string, int> instructionSizeMap;
+
+
+    u_int32_t offsetCounter;
+    SectionType currentSectionType;
+    string currentSection;
+    State currentState;
+
 };
 
 #endif //SS_COMPILER_H

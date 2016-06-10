@@ -40,6 +40,13 @@ void split(const string &s, const char* delim, vector<string> & v){
     free(dup);
 }
 
+
+
+unordered_map<string, int> Compiler::instructionSizeMap =
+    {
+        {"ldc", 2}
+    };
+
 unordered_map<string, u_int8_t> Compiler::instructionCodes =
     {
         {"int",  InstructionCodes::INT},
@@ -107,8 +114,8 @@ unordered_map<string, int> Compiler::instructionTypesMap =
 unordered_map<string, u_int32_t> Compiler::specialRegisterValues =
     {
         {"pc", 16},
-        {"sp", 17},
-        {"lr", 18},
+        {"lr", 17},
+        {"sp", 18},
         {"psw", 19}
     };
 
@@ -126,12 +133,56 @@ unordered_map<int, regex> Compiler::tokenParsers =
         { OPERAND_REGSPECINCDEC, regex("^(?:(?:(?:\\+\\+|--)(pc|sp|lr|psw))|(?:(pc|sp|lr|psw)(?:\\+\\+|--)))$")},
         { OPERAND_DEC, regex("^([0-9]+)$")},
         { OPERAND_HEX, regex("^(0x[0-9abcdef]+)$")},
-        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
+        { INSTRUCTION, regex("^(int|add|sub|mul|div|cmp|and|or|not|test|ldr|str|call|in|out|mov|shr|shl|ldch|ldcl|ldc)(eq|ne|gt|ge|lt|le|al)?(s)?$")},
         { SYMBOLDIFF, regex("^([a-zA-Z_][a-zA-Z0-9]*)-([a-zA-Z_][a-zA-Z0-9]*)$")}
     };
 
 Compiler::Compiler()
 {
+
+    instructionMappers =
+        {
+            {"ldc", [&](queue<string> &tokens){
+                if (tokens.size() != 2)
+                {
+                    throw runtime_error("Not valid instruction! ldc");
+                }
+
+                string firstParam;
+                string secondParam;
+                u_int32_t operand;
+                TokenType operandType;
+
+                GetOperand(tokens, firstParam, operand, operandType, {OPERAND_REG});
+                GetOperand(tokens, secondParam, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF, SYMBOL});
+
+                if (operandType == SYMBOL)
+                {
+                    Relocation rel(secondParam, currentSection, offsetCounter, RelocationType::LDCRELOC);
+                    relocations.push_back(rel);
+                }
+
+                u_int32_t high = operand;
+                high >>= 16;
+                u_int32_t low = operand;
+                low <<= 16;
+                low >>= 16;
+
+                queue<string> ldchInstr;
+                ldchInstr.push("ldch");
+                ldchInstr.push(firstParam);
+                ldchInstr.push(to_string(high));
+
+                queue<string> ldclInstr;
+                ldclInstr.push("ldcl");
+                ldclInstr.push(firstParam);
+                ldclInstr.push(to_string(low));
+
+                return vector<queue<string> >({ldchInstr, ldclInstr});
+            }
+            },
+        };
+
     instructionsHandlers =
         {
             {InstructionType::INT, [&](Instruction &instr, queue<string> &tokens) {
@@ -330,7 +381,7 @@ Compiler::Compiler()
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
                 instr.instrCode.instruction_ldch_ldcl.dst = operand;
 
-                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 16);
+                GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF, SYMBOL}, 16);
                 instr.instrCode.instruction_ldch_ldcl.c = operand;
 
                 instr.instrCode.instruction_ldch_ldcl.hl = (instr.name == "ldch")?1:0;
@@ -390,6 +441,8 @@ void Compiler::LoadAssemblyFromFile(ifstream &inputFile)
             break;
 
         assemblyInput.push_back(tokens);
+
+
     }
 }
 
@@ -401,11 +454,10 @@ void Compiler::LoadAssemblyFromFile(ifstream &inputFile)
 void Compiler::FirstRun()
 {
     //u_int32_t locationCounter = 0;
-    u_int32_t offsetCounter = 0;
+    offsetCounter = 0;
     queue<string> tokensQueue;
-    SectionType currentSectionType = START;
-    string currentSection = "start";
-    State currentState;
+    currentSectionType = START;
+    currentSection = "start";
 
     unordered_map<int, function<State()> > stateMachine =
         {
@@ -471,7 +523,16 @@ void Compiler::FirstRun()
                         AddNewSymbol(currentToken, true, currentSectionType, currentSection, ScopeType::LOCAL, offsetCounter);
                         return LINE_END;
                     case INSTRUCTION:
-                        offsetCounter += 4;
+                        //TODO: a bre brate.
+                        currentToken = currentToken.substr(0,3);
+                        if (instructionSizeMap.find(currentToken) != instructionSizeMap.end())
+                        {
+                            offsetCounter += instructionSizeMap[currentToken] * 4;
+                        }
+                        else
+                        {
+                            offsetCounter += 4;
+                        }
                         while (!tokensQueue.empty()) tokensQueue.pop();
                         return LINE_END;
                     default:
@@ -537,11 +598,10 @@ void Compiler::FirstRun()
 
 void Compiler::SecondRun()
 {
-    u_int32_t offsetCounter = 0;
+    offsetCounter = 0;
     queue<string> tokensQueue;
-    SectionType currentSectionType = START;
-    string currentSection = "start";
-    State currentState;
+    currentSectionType = START;
+    currentSection = "start";
 
     unordered_map<int, function<State()> > stateMachine =
         {
@@ -908,6 +968,29 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
 
     }
 
+    else if(regex_match(token, base_match, tokenParsers[SYMBOL]))
+    {
+        ret = UINT32_MAX;
+    }
+
+/// /
+//    else if (regex_match(token, base_match, tokenParsers[SYMBOL]))
+//    {
+//        string symbolToken = base_match[1];
+//        auto symbolPair = symbols.find(symbolToken);
+//        if (symbolPair == symbols.end())
+//        {
+//            throw runtime_error("Symbol not defined! " + symbolToken);
+//        }
+//
+//        Relocation rel(symbolToken, currentSection, offsetCounter, RelocationType::CALLRELOC);
+//        relocations.push_back(rel);
+//
+//        //returning al ones if relocation is needed
+//        ret = UINT32_MAX;
+//        //sectionPair->second.WriteZeros(locationCounter, 4);
+//    }
+
     if (!isReg && immSize != 0)
     {
         ret <<= 32-immSize;
@@ -985,6 +1068,7 @@ void Compiler::HandleDirective(string directiveName, queue<string> &tokens, u_in
 
     if (directiveName == ".long")
     {
+
         if (nextTokenType != SYMBOL)
         {
             binVal = new u_int32_t(operandVal);
@@ -1061,41 +1145,98 @@ void Compiler::HandleInstruction(string instructionName, string currentSection, 
         string condition = base_match[2];
         bool setFlags = (base_match[3] == "s");
 
-        Instruction instruction((InstructionSymbol) instructionCodes[shortInstructionName], (InstructionCondition) branchCodes[condition], setFlags, shortInstructionName);
+        auto instructionMapper = instructionMappers.find(shortInstructionName);
 
-        if (instructionTypesMap.find(shortInstructionName) == instructionTypesMap.end())
+        //TODO: meeeh, refactor.
+        if (instructionMapper == instructionMappers.end())
         {
-            throw runtime_error("Error, not valid instruction " + shortInstructionName + " " + instructionName);
-        }
+            Instruction instruction((InstructionSymbol) instructionCodes[shortInstructionName], (InstructionCondition) branchCodes[condition], setFlags, shortInstructionName);
 
-        InstructionType instructionType = (InstructionType) instructionTypesMap[shortInstructionName];
+            if (instructionTypesMap.find(shortInstructionName) == instructionTypesMap.end())
+            {
+                throw runtime_error("Error, not valid instruction " + shortInstructionName + " " + instructionName);
+            }
 
-        instruction.instrCode.binaryCode = 0;
-        instruction.instrCode.instruction.instr = instructionCodes[shortInstructionName];
-        instruction.instrCode.instruction.cond = branchCodes[condition];
-        instruction.instrCode.instruction.flag = (setFlags?1:0);
+            InstructionType instructionType = (InstructionType) instructionTypesMap[shortInstructionName];
 
-        instructionsHandlers[instructionType](instruction, tokens);
+            instruction.instrCode.binaryCode = 0;
+            instruction.instrCode.instruction.instr = instructionCodes[shortInstructionName];
+            instruction.instrCode.instruction.cond = branchCodes[condition];
+            instruction.instrCode.instruction.flag = (setFlags?1:0);
 
-        instructions.push_back(instruction);
+            instructionsHandlers[instructionType](instruction, tokens);
 
-        //TODO: ldc and mapping one instruction to more instructions !
+            instructions.push_back(instruction);
 
-        if (sections.find(currentSection) == sections.end())
-        {
-            throw runtime_error("random err");
-        }
+            if (sections.find(currentSection) == sections.end())
+            {
+                throw runtime_error("random err");
+            }
 
-        auto sectionPair = sections.find(currentSection);
-        if (sectionPair == sections.end())
-        {
-            throw runtime_error("rand err");
-        }
-        sectionPair->second.Write(&instruction.instrCode.binaryCode, locationCounter, 4);
+            auto sectionPair = sections.find(currentSection);
+            if (sectionPair == sections.end())
+            {
+                throw runtime_error("rand err");
+            }
+            sectionPair->second.Write(&instruction.instrCode.binaryCode, locationCounter, 4);
 
 //        memcpy(sections[currentSection] + locationCounter, &instruction.instrCode.binaryCode, 4);
 
-        locationCounter += 4;
+            locationCounter += 4;
+        }
+        else
+        {
+            vector<queue<string> > multiInstructionTokens = instructionMappers[shortInstructionName](tokens);
+
+
+            for (auto &instrTokens : multiInstructionTokens)
+            {
+                //TODO: presuming this will always pass
+                regex_match(instrTokens.front(), base_match, tokenParsers[INSTRUCTION]);
+
+                instrTokens.pop();
+
+                string shortInstructionName = base_match[1];
+                string condition = base_match[2];
+                bool setFlags = (base_match[3] == "s");
+
+                Instruction instruction((InstructionSymbol) instructionCodes[shortInstructionName], (InstructionCondition) branchCodes[condition], setFlags, shortInstructionName);
+
+                if (instructionTypesMap.find(shortInstructionName) == instructionTypesMap.end())
+                {
+                    throw runtime_error("Error, not valid instruction " + shortInstructionName + " " + instructionName);
+                }
+
+                InstructionType instructionType = (InstructionType) instructionTypesMap[shortInstructionName];
+
+                instruction.instrCode.binaryCode = 0;
+                instruction.instrCode.instruction.instr = instructionCodes[shortInstructionName];
+                instruction.instrCode.instruction.cond = branchCodes[condition];
+                instruction.instrCode.instruction.flag = (setFlags?1:0);
+
+                instructionsHandlers[instructionType](instruction, instrTokens);
+
+                instructions.push_back(instruction);
+
+                if (sections.find(currentSection) == sections.end())
+                {
+                    throw runtime_error("random err");
+                }
+
+                auto sectionPair = sections.find(currentSection);
+                if (sectionPair == sections.end())
+                {
+                    throw runtime_error("rand err");
+                }
+                sectionPair->second.Write(&instruction.instrCode.binaryCode, locationCounter, 4);
+
+//        memcpy(sections[currentSection] + locationCounter, &instruction.instrCode.binaryCode, 4);
+
+                locationCounter += 4;
+            }
+        }
+
+
     }
 }
 

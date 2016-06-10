@@ -240,10 +240,21 @@ void Linker::FixRelocations()
 
             if (section->second.size <= rel.offset)
             {
+                cout << section->second.size << " " << rel.offset << endl;
                 throw runtime_error("randddddom err");
             }
 
-            section->second.Write(&symbolVal, rel.offset, 4);
+            if (rel.relocationType == LONG)
+            {
+                section->second.Write(&symbolVal, rel.offset, 4);
+            }
+            else if (rel.relocationType == LDCRELOC)
+            {
+                u_int16_t high = symbolVal >> 16;
+                u_int16_t low = symbolVal;
+                section->second.Write(&high, rel.offset + 2 , 2);
+                section->second.Write(&low, rel.offset + 6, 2);
+            }
         }
         else
         {
