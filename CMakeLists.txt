@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 project(ss)
 
 include_directories(common)
+include_directories(compiler)
+include_directories(linker)
+include_directories(emulator)
 
 file(GLOB SOURCE_FILES_COMMON
         common/*.h

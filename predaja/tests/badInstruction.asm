@@ -6,17 +6,14 @@
     r: .char 34
 .align
 .skip 1
-.align
-.skip 0x456
-.align
-.align
 .text
 _start:
-    call r1, nesto123
+    callt r1, 0xffff
     call r2, 6
+
 .data.ert
     b: .char 3
 .text.ert
     add r1, r2
 label1:
-    ldch r2,r3
+    ldch r2, 0x567

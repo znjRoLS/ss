@@ -11,11 +11,13 @@ main:
     ldc r6, kbInterrupt
     ldc r7, 12
     str r6, r7, 0
+
 loop:
     add r3, 1
     cmps r12, 10
     moveq pc, r5
     mov pc, r4
+
 progEnd:
     halt
 
@@ -31,5 +33,4 @@ kbInterrupt:
     ldr r7, r8, 0
     str r7, r9, 0
     str r7, r9, 0
-
     iret

@@ -37,6 +37,5 @@ timerInterrupt:
        ldc r8, 0x1000
 
        ldrne r7, r8, 0
-       subne 
 
        iret

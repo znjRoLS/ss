@@ -1,12 +1,9 @@
-.public _start
-.data
-    a: .word 0x12345678
+.public main
 .text
-_start:
-    call r1, 5
-    call r2, 6
-    add r2,r1
-    add r2,0x12345678
-    add r2,0xffffffff
-    addeq r2,r1
-    addeqs r2,r1
+main:
+    ldc r2, 50
+    sub r2, 1
+    ldc r7, 0x2000
+
+    str r2, r7, 0
+    halt

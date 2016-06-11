@@ -1,0 +1,10 @@
+.text.ert
+. = .+1
+dataStart = .
+.data
+dataEnd = .
+
+. = 100+45+ 45 + align(dataStart,4)
+loc = .
+testInstr = dataStart - dataEnd
+sth123 =123
