@@ -27,7 +27,7 @@ Symbol::Symbol(string _name, bool _defined, string _sectionName, ScopeType _scop
 }
 
 
-stringstream Symbol::Serialize()
+string Symbol::Serialize()
 {
     stringstream ss;
     ss << right <<
@@ -41,7 +41,7 @@ stringstream Symbol::Serialize()
         setw(15) << symbolType <<
         endl;
 
-    return ss;
+    return ss.str();
 }
 
 Symbol Symbol::Deserialize(string instr)

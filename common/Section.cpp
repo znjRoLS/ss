@@ -51,7 +51,7 @@ Section& Section::operator+=(Section& other)
 }
 
 
-stringstream Section::Serialize()
+string Section::Serialize()
 {
     stringstream out;
     const int tokensByLine = 8;
@@ -67,7 +67,7 @@ stringstream Section::Serialize()
     out << endl;
     out << ".end" << endl << endl;
 
-    return out;
+    return out.str();
 }
 
 Section Section::Deserialize(string instr)

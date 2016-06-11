@@ -17,7 +17,7 @@ ofstream Linker::logFile("linker/log");
 
 regex sectionRegex("^.(text|data|bss)(.[a-zA-Z_][a-zA-Z0-9]*)?$");
 
-void Linker::Link(ifstream &loaderScriptFile, vector<ifstream> &inputFiles, ofstream &outputFile)
+void Linker::Link(ifstream &loaderScriptFile, vector<string> &inputFiles, ofstream &outputFile)
 {
     try {
 
@@ -102,8 +102,10 @@ int Linker::AddSection(Symbol& sym, Section& section)
     return offset;
 }
 
-void Linker::LoadFile(ifstream &inputFile)
+void Linker::LoadFile(string inputFile)
 {
+
+
 
     ObjectFile objectFile;
 
@@ -299,7 +301,7 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     for (auto &symbol:symbols)
     {
-        outputFile << symbol.second.Serialize().rdbuf();
+        outputFile << symbol.second.Serialize();
     }
 
     outputFile << "%END%" << endl;
@@ -318,7 +320,7 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     for (auto &rel:relocations)
     {
-        outputFile << rel.Serialize().rdbuf();
+        outputFile << rel.Serialize();
     }
 
     outputFile << "%END%" << endl;
@@ -329,7 +331,7 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
     for (auto &section:sections)
     {
-        outputFile << section.second.Serialize().rdbuf();
+        outputFile << section.second.Serialize();
     }
 
     outputFile << "%END%" << endl << endl;
@@ -357,7 +359,7 @@ void Linker::WriteOutputFile(ofstream &outputFile)
     Symbol mainSym = symbols.find("main")->second;
     outputFile << "Main: " << (mainSym.offset + sectionPositions[mainSym.sectionName]) << endl;
 
-    outputFile << outputSection->Serialize().rdbuf();
+    outputFile << outputSection->Serialize();
 
     outputFile << "%END%" << endl;
 

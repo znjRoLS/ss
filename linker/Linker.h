@@ -21,10 +21,10 @@ using namespace std;
 class Linker {
 
 public:
-    void Link(ifstream&, vector<ifstream> &inputFiles, ofstream &outputFile);
+    void Link(ifstream&, vector<string> &inputFiles, ofstream &outputFile);
 
 private:
-    void LoadFile(ifstream &inputFile);
+    void LoadFile(string inputFile);
 
     void FixRelocations();
 

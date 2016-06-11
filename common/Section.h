@@ -27,7 +27,7 @@ public:
 
     friend ostream& operator<<(ostream&, Section&);
 
-    stringstream Serialize();
+    string Serialize();
 
     static Section Deserialize(string);
 

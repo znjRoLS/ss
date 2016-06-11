@@ -886,7 +886,7 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
 
     for (auto &symbol:symbols)
     {
-        outputFile << symbol.second.Serialize().rdbuf();
+        outputFile << symbol.second.Serialize();
     }
 
     outputFile << "%END%" << endl;
@@ -905,7 +905,7 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
 
     for (auto &rel:relocations)
     {
-        outputFile << rel.Serialize().rdbuf();
+        outputFile << rel.Serialize();
     }
 
     outputFile << "%END%" << endl;
@@ -916,7 +916,7 @@ void Compiler::WriteObjectFile(ofstream& outputFile)
 
     for (auto &section:sections)
     {
-        outputFile << section.second.Serialize().rdbuf();
+        outputFile << section.second.Serialize();
     }
 
     outputFile << "%END%" << endl;

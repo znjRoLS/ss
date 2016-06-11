@@ -21,7 +21,7 @@ Relocation::Relocation(string _symbolName, string _section, u_int32_t _offset, R
 
 }
 
-stringstream Relocation::Serialize()
+string Relocation::Serialize()
 {
     stringstream out;
 
@@ -33,7 +33,7 @@ stringstream Relocation::Serialize()
         setw(15) << relocationType <<
         endl;
 
-    return out;
+    return out.str();
 }
 
 Relocation Relocation::Deserialize(string instr)

@@ -6,8 +6,16 @@
 
 #include <fstream>
 
-void ObjectFile::LoadFromFile(ifstream &inFile)
+void ObjectFile::LoadFromFile(string inputFile)
 {
+
+    ifstream inFile(inputFile);
+
+    if (!inFile.is_open())
+    {
+        cerr << "Error opening input file " << inputFile << endl;
+    }
+
     string line;
 
     string sectionCumulate;

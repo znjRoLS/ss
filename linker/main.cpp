@@ -36,24 +36,24 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    vector<ifstream> inputFiles;
+    vector<string> inputFiles;
 
     for (int i = 3; i < argc; i ++)
     {
-        inputFiles.push_back(ifstream(argv[i]));
+        inputFiles.push_back(argv[i]);
     }
 
     bool err = false;
     for (auto &inputFile: inputFiles)
     {
-        if (!inputFile.is_open())
-        {
-            err = true;
-            cerr << "Error opening input file " << endl;
-        }
+//        if (!inputFile.is_open())
+//        {
+//            err = true;
+//            cerr << "Error opening input file " << endl;
+//        }
     }
 
-    if (err) return 1;
+//    if (err) return 1;
 
     linker->Link(loaderFile, inputFiles, outputFile);
 

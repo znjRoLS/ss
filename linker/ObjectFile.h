@@ -16,7 +16,7 @@
 class ObjectFile {
 public:
 
-    void LoadFromFile(ifstream& );
+    void LoadFromFile(string );
 
     unordered_map<string,Section> sections;
     unordered_map<string,Symbol> symbols;

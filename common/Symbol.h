@@ -31,7 +31,7 @@ public:
     int size;
     TokenType symbolType;
 
-    stringstream Serialize();
+    string Serialize();
 
     static Symbol Deserialize(string);
 

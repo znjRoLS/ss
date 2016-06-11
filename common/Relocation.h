@@ -26,7 +26,7 @@ public:
 
     friend ostream& operator<<(ostream& out, Relocation&);
 
-    stringstream Serialize();
+    string Serialize();
 
     static Relocation Deserialize(string);
 
