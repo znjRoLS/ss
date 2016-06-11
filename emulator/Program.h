@@ -88,9 +88,17 @@ public:
     chrono::time_point<chrono::system_clock> lastTimerExecution;
 
     void TimerInterrupt();
+    static void *KeyboardThread(void *);
+
+    static volatile char keyboardBuf;
+    static volatile bool keyboardInterrupt;
 
     //TODO: hardcoded
     u_int32_t IVT [16];
+
+    pthread_t keyboardThread;
+
+    void KeyboardInterrupt();
 
 };
 

@@ -397,6 +397,10 @@ Compiler::Compiler()
 
                 GetOperand(tokens, token, operand, operandType, {OPERAND_DEC, OPERAND_HEX, SYMBOLDIFF}, 10);
                 instr.instrCode.instruction_ldr_str.imm = operand;
+
+
+                instr.instrCode.instruction_ldr_str.ls = (instr.name == "ldr")?1:0;
+
             }
             },
             {InstructionType::CALL, [&](Instruction &instr, queue<string> &tokens) {

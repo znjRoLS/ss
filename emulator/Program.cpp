@@ -10,8 +10,13 @@
 #include <iomanip>
 #include "Instruction.h"
 #include "Emulator.h"
+#include <pthread.h>
+
 
 using namespace std;
+
+volatile char Program::keyboardBuf;
+volatile bool Program::keyboardInterrupt;
 
 ostream& operator<<(ostream& out, InstructionCodes::InstructionSymbol s);
 
@@ -298,6 +303,7 @@ Program::Program():
                     u_int32_t regDest = currentInstruction.instrCode.instruction_call.dst;
                     u_int32_t imm = SignExt(currentInstruction.instrCode.instruction_call.imm,19);
 
+                    StackPush(LR);
                     LR = PC;
 
                     PC = GetRegister(regDest) + imm + CODE_START;
@@ -332,6 +338,18 @@ Program::Program():
                         result >>= imm;
 
                     SetRegister(result, regDest);
+
+                    //iret
+                    if (regDest == 16 && currentInstruction.setFlags)
+                    {
+                        PSW.val = StackPop();
+                    }
+
+                    if (regDest == 16)
+                    {
+                        LR = StackPop();
+                    }
+
                 }
             },
             {
@@ -373,7 +391,10 @@ u_int32_t Program::GetMemory(u_int32_t ind)
     }
 
     u_int32_t res;
+
     memcpy(&res, memory + ind, 4);
+
+    Emulator::logFile << "Fetched memory from " << ind << " - " << res<<endl;
 
     return res;
 }
@@ -384,6 +405,8 @@ void Program::SetMemory(u_int32_t val, u_int32_t ind)
     {
         throw runtime_error("Index for memory out of bounds !");
     }
+
+    Emulator::logFile << "Set memory " << ind << " - " << val<<endl;
 
     memcpy(memory +ind, &val, 4);
 }
@@ -404,6 +427,8 @@ void Program::StackPush(u_int32_t val)
         throw runtime_error("Stack overflow !");
     }
 
+    Emulator::logFile << "Stack push " << hex << val << endl;
+
     SP-=4;
     memcpy(memory + SP, &val, 4);
 }
@@ -417,6 +442,11 @@ u_int32_t Program::StackPop()
 
     u_int32_t ret;
     memcpy(&ret, memory+SP, 4);
+
+    SP += 4;
+
+    Emulator::logFile << "Stack pop " << hex << ret << endl;
+
     return ret;
 }
 
@@ -483,7 +513,37 @@ void Program::Init()
 
     executionStart = chrono::system_clock::now();
     lastTimerExecution = executionStart;
+
+    int iret1 = pthread_create( &keyboardThread, NULL, KeyboardThread, nullptr);
+
+    if(iret1)
+    {
+        throw runtime_error("Error - pthread_create() return code: " + iret1);
+    }
+
 }
+
+
+void *Program::KeyboardThread(void *ptr)
+{
+    while (true)
+    {
+        while (keyboardInterrupt);
+
+        cout << "Passed barrier" << endl;
+
+        u_int8_t temp;
+
+        cin >> temp;
+
+        cout << "Read char" << endl;
+
+        keyboardBuf = temp;
+
+        keyboardInterrupt = true;
+    }
+}
+
 
 void Program::ReadNext()
 {
@@ -514,9 +574,9 @@ void Program::ExecuteCurrent()
         Emulator::logFile << " " << hex << registers[i];
 
     Emulator::logFile << endl;
-    Emulator::logFile << "PC: " << hex << PC << endl;
-    Emulator::logFile << "LR: " << hex << LR << endl;
-    Emulator::logFile << "SP: " << hex << SP << endl;
+    Emulator::logFile << "PC: " << hex << PC << " ";
+    Emulator::logFile << "LR: " << hex << LR << " ";
+    Emulator::logFile << "SP: " << hex << SP << " ";
     Emulator::logFile << "PSW: " << hex << PSW.val << endl;
 
     Emulator::logFile << "Executing: " << currentInstruction.instructionSymbol << " " << currentInstruction.instructionCondition << " " << currentInstruction.setFlags << " " << currentInstruction.instrCode.binaryCode << endl;
@@ -535,6 +595,8 @@ void Program::ExecuteCurrent()
 
     HandleInterrupts();
 
+    Emulator::logFile << endl;
+
 }
 
 void Program::HandleInterrupts()
@@ -550,14 +612,54 @@ void Program::HandleInterrupts()
         TimerInterrupt();
     }
 
+    if (keyboardInterrupt)
+    {
+        KeyboardInterrupt();
+    }
 
+    if (memory[OUTPUT_POS] != 0)
+    {
+        char temp = memory[OUTPUT_POS];
+        memory[OUTPUT_POS] = 0;
+
+        cout << "Print char ! : " << temp;
+    }
+
+
+}
+
+
+void Program::KeyboardInterrupt()
+{
+    if (PSW.I == 1)
+    {
+        Emulator::logFile << "Masked interrupts (keyboard)" << endl;
+        return;
+    }
+
+    Emulator::logFile << "Keyboard interrupt !" << endl;
+
+    //copy the contents of buf
+
+    u_int32_t temp = keyboardBuf;
+    keyboardInterrupt = false;
+
+    memcpy(memory + KEYBOARD_POS, &temp, 4);
+    memcpy(memory + KEYBOARD_STATUS_POS, &KEYBOARD_STATUS_MASK, 4);
+
+    StackPush(LR);
+    LR = PC;
+    StackPush(PSW.val);
+    PSW.I = 1;
+
+    memcpy(&PC, memory + 12, 4);
 }
 
 void Program::TimerInterrupt()
 {
     if (PSW.I == 1)
     {
-        Emulator::logFile << "Masked interrupts" << endl;
+        Emulator::logFile << "Masked interrupts (timer)" << endl;
         return;
     }
     if (PSW.T == 0)
@@ -568,9 +670,12 @@ void Program::TimerInterrupt()
 
     Emulator::logFile << "Timer interrupt !" << endl;
 
-    StackPush(PSW.val);
-    LR = PC;
+
     StackPush(LR);
+    LR = PC;
+    StackPush(PSW.val);
+    PSW.I = 1;
+
     memcpy(&PC, memory + 4, 4);
 }
 

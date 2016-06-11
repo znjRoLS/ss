@@ -11,5 +11,11 @@
     iret
 
 .text.keyboard
-    ldc r13, 1
+    add r13, 1
+    ldc r8, 0x1000
+    ldc r9, 0x2000
+
+    ldr r7, r8, 0
+    str r7, r9, 0
+
     iret
