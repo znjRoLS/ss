@@ -26,6 +26,52 @@ Program::Program():
     programSection("output", 0),
     currentInstruction(InstructionCodes::HALT, InstructionCodes::NO_CONDITION, false)
 {
+
+    conditionTesters =
+        {
+            {
+                InstructionCodes::EQ, [&](){
+                    return PSW.Z == 1;
+            }
+            },
+            {
+                InstructionCodes::NE, [&](){
+                return PSW.Z == 0;
+            }
+            },
+            {
+                InstructionCodes::GT, [&](){
+                return (PSW.Z == 0 && PSW.N == 0);
+            }
+            },
+            {
+                InstructionCodes::GE, [&](){
+                return (PSW.N == 0);
+            }
+            },
+            {
+                InstructionCodes::LT, [&](){
+                return (PSW.N == 1);
+            }
+            },
+            {
+                InstructionCodes::LE, [&](){
+                return (PSW.Z == 0 || PSW.N == 1);
+            }
+            },
+            {
+                InstructionCodes::NO_CONDITION, [&](){
+                return true;
+            }
+            },
+            {
+                InstructionCodes::AL, [&](){
+                return true;
+            }
+            },
+        };
+
+
     instructionExecutors =
         {
             {
@@ -340,14 +386,20 @@ Program::Program():
                     SetRegister(result, regDest);
 
                     //iret
-                    if (regDest == 16 && currentInstruction.setFlags)
+                    if (regDest == 16 && regSrc == 17 && currentInstruction.setFlags)
                     {
                         PSW.val = StackPop();
                     }
 
-                    if (regDest == 16)
+                    if (regDest == 16 && regSrc == 17)
                     {
                         LR = StackPop();
+                    }
+
+                    //not same address space
+                    if (regDest == 16 && regSrc != 17)
+                    {
+                        PC += CODE_START;
                     }
 
                 }
@@ -530,13 +582,15 @@ void *Program::KeyboardThread(void *ptr)
     {
         while (keyboardInterrupt);
 
-        cout << "Passed barrier" << endl;
+        //cout << "Passed barrier" << endl;
+        Emulator::logFile << "Passed barrier" << endl;
 
         u_int8_t temp;
 
-        cin >> temp;
+        cin >> noskipws >> temp;
 
-        cout << "Read char" << endl;
+        //cout << "Read char " << temp << endl;
+        Emulator::logFile << "Read char " << temp << endl;
 
         keyboardBuf = temp;
 
@@ -573,29 +627,37 @@ void Program::ExecuteCurrent()
     for (int i = 0 ; i < 16;  i ++)
         Emulator::logFile << " " << hex << registers[i];
 
-    Emulator::logFile << endl;
-    Emulator::logFile << "PC: " << hex << PC << " ";
-    Emulator::logFile << "LR: " << hex << LR << " ";
-    Emulator::logFile << "SP: " << hex << SP << " ";
-    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
+//    Emulator::logFile << endl;
+//    Emulator::logFile << "PC: " << hex << PC << " ";
+//    Emulator::logFile << "LR: " << hex << LR << " ";
+//    Emulator::logFile << "SP: " << hex << SP << " ";
+//    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
+//
+//    Emulator::logFile << "Executing: " << currentInstruction.instructionSymbol << " " << currentInstruction.instructionCondition << " " << currentInstruction.setFlags << " " << currentInstruction.instrCode.binaryCode << endl;
 
-    Emulator::logFile << "Executing: " << currentInstruction.instructionSymbol << " " << currentInstruction.instructionCondition << " " << currentInstruction.setFlags << " " << currentInstruction.instrCode.binaryCode << endl;
+    if (conditionTesters[currentInstruction.instructionCondition]())
+    {
+        instructionExecutors[currentInstruction.instructionSymbol]();
+    }
+    else
+    {
+//        Emulator::logFile << "Skipping instruction" << endl;
+    }
 
-    instructionExecutors[currentInstruction.instructionSymbol]();
 
-    Emulator::logFile << "Registers: ";
-    for (int i = 0 ; i < 16;  i ++)
-        Emulator::logFile << " " << hex << registers[i];
-
-    Emulator::logFile << endl;
-    Emulator::logFile << "PC: " << hex << PC << endl;
-    Emulator::logFile << "LR: " << hex << LR << endl;
-    Emulator::logFile << "SP: " << hex << SP << endl;
-    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
+//    Emulator::logFile << "Registers: ";
+//    for (int i = 0 ; i < 16;  i ++)
+//        Emulator::logFile << " " << hex << registers[i];
+//
+//    Emulator::logFile << endl;
+//    Emulator::logFile << "PC: " << hex << PC << " ";
+//    Emulator::logFile << "LR: " << hex << LR << " ";
+//    Emulator::logFile << "SP: " << hex << SP << " ";
+//    Emulator::logFile << "PSW: " << hex << PSW.val << endl;
 
     HandleInterrupts();
 
-    Emulator::logFile << endl;
+//    Emulator::logFile << endl;
 
 }
 
@@ -605,7 +667,7 @@ void Program::HandleInterrupts()
     chrono::time_point<chrono::system_clock> timeNow = chrono::system_clock::now();
     chrono::duration<double> elapsed = timeNow - lastTimerExecution;
     //TODO: hardcoded
-    Emulator::logFile << dec << "elapsed: " << elapsed.count() << endl;
+    //Emulator::logFile << dec << "elapsed: " << elapsed.count() << endl;
     if (elapsed.count() >= 1.0)
     {
         lastTimerExecution = timeNow;
@@ -622,7 +684,10 @@ void Program::HandleInterrupts()
         char temp = memory[OUTPUT_POS];
         memory[OUTPUT_POS] = 0;
 
-        cout << "Print char ! : " << temp;
+        cout << temp;
+        cout.flush();
+        //cout << "Print char ! : " << temp << endl;
+        Emulator::logFile << "Print char: " << temp << endl;
     }
 
 

@@ -69,6 +69,7 @@ public:
     bool IsEnd();
 
     unordered_map<int, function<void()> > instructionExecutors;
+    unordered_map<int, function<bool()> > conditionTesters;
 
 
     void StackPush(u_int32_t);
