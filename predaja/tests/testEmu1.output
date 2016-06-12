@@ -1,31 +1,31 @@
 %SYMBOLS SECTION%
   Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
                              -                    .text.fact                             1                    .text.fact                             0                         LOCAL                            20                       SECTION
-                             -                          fact                             1                    .text.fact                             0                        GLOBAL                             0                         LABEL
-                             -                          kraj                             1                    .text.neki                           156                         LOCAL                             0                         LABEL
-                             -                        ispis2                             1                    .text.neki                           132                         LOCAL                             0                         LABEL
-                             -                          loop                             1                         .text                            88                         LOCAL                             0                         LABEL
-                             -                    tmrIntrOut                             1              .data.intrlabele                             4                         LOCAL                             0                         LABEL
-                             -                          main                             1                         .text                             0                        GLOBAL                             0                         LABEL
                              -                         ispis                             1                    .text.neki                            88                         LOCAL                             0                         LABEL
-                             -                      kbOutput                             1              .data.intrlabele                            12                         LOCAL                             0                         LABEL
-                             -                    .text.intr                             1                    .text.intr                             0                         LOCAL                            24                       SECTION
+                             -                        ispis2                             1                    .text.neki                           132                         LOCAL                             0                         LABEL
+                             -                          fact                             1                    .text.fact                             0                        GLOBAL                             0                         LABEL
                              -                       advance                             1                         .text                           100                         LOCAL                             0                         LABEL
-                             -                     kbIntrOut                             1              .data.intrlabele                             8                         LOCAL                             0                         LABEL
-                             -                         .text                             1                         .text                             0                         LOCAL                           152                       SECTION
-                             -                          wait                             1                    .text.neki                            32                         LOCAL                             0                         LABEL
-                             -                         .data                             1                         .data                             0                         LOCAL                             4                       SECTION
-                             -                timerInterrupt                             1                    .text.intr                             0                        GLOBAL                             0                         LABEL
-                             -                      advance2                             1                         .text                           136                         LOCAL                             0                         LABEL
-                             -                         loop2                             1                         .text                           124                         LOCAL                             0                         LABEL
-                             -              .data.intrlabele                             1              .data.intrlabele                             0                         LOCAL                            20                       SECTION
-                             -                        output                             1              .data.intrlabele                             0                         LOCAL                             0                         LABEL
-                             -                   kbInterrupt                             1                    .text.intr                             8                        GLOBAL                             0                         LABEL
-                             -                       kbInput                             1              .data.intrlabele                            16                         LOCAL                             0                         LABEL
-                             -                             a                             1                         .data                             0                         LOCAL                             0                         LABEL
                              -                     testInstr                             1                    .text.neki                             0                        GLOBAL                             0                         LABEL
-                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                           160                       SECTION
+                             -                     kbIntrOut                             1              .data.intrlabele                             8                         LOCAL                             0                         LABEL
+                             -                timerInterrupt                             1                    .text.intr                             0                        GLOBAL                             0                         LABEL
+                             -                      kbOutput                             1              .data.intrlabele                            12                         LOCAL                             0                         LABEL
+                             -                          wait                             1                    .text.neki                            32                         LOCAL                             0                         LABEL
+                             -                         .text                             1                         .text                             0                         LOCAL                           152                       SECTION
+                             -              .data.intrlabele                             1              .data.intrlabele                             0                         LOCAL                            20                       SECTION
                              -                          calc                             1                    .text.neki                            44                         LOCAL                             0                         LABEL
+                             -                         .data                             1                         .data                             0                         LOCAL                             4                       SECTION
+                             -                         loop2                             1                         .text                           124                         LOCAL                             0                         LABEL
+                             -                      advance2                             1                         .text                           136                         LOCAL                             0                         LABEL
+                             -                    tmrIntrOut                             1              .data.intrlabele                             4                         LOCAL                             0                         LABEL
+                             -                    .text.intr                             1                    .text.intr                             0                         LOCAL                            24                       SECTION
+                             -                          loop                             1                         .text                            88                         LOCAL                             0                         LABEL
+                             -                   kbInterrupt                             1                    .text.intr                             8                        GLOBAL                             0                         LABEL
+                             -                        output                             1              .data.intrlabele                             0                         LOCAL                             0                         LABEL
+                             -                             a                             1                         .data                             0                         LOCAL                             0                         LABEL
+                             -                          kraj                             1                    .text.neki                           156                         LOCAL                             0                         LABEL
+                             -                       kbInput                             1              .data.intrlabele                            16                         LOCAL                             0                         LABEL
+                             -                          main                             1                         .text                             0                        GLOBAL                             0                         LABEL
+                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                           160                       SECTION
 %END%
 
 %RELOCATIONS SECTION%
@@ -50,12 +50,6 @@
 %END%
 
 %SECTIONS SECTION%
-.text.fact 20
-36 81 00 00 26 62 00 00 
-5e 22 00 00 c1 05 00 00 
-e6 30 02 00 
-.end
-
 .text 152
 f6 16 00 00 f6 06 c4 00 
 f6 17 00 00 f6 07 08 00 
@@ -76,22 +70,6 @@ f6 05 a0 00 5e 02 03 00
 e5 b0 00 00 e6 90 00 00 
 f6 14 00 00 f6 04 dc 00 
 c6 04 00 00 b6 00 00 00 
-.end
-
-.text.intr 24
-16 6c 00 00 ee 30 02 00 
-5e 6d 00 00 11 6d 00 00 
-a1 e8 24 00 ee 30 02 00 
-.end
-
-.data.intrlabele 20
-00 20 00 00 04 00 00 00 
-0c 00 00 00 00 20 00 00 
-00 10 00 00 
-.end
-
-.data 4
-78 56 00 00 
 .end
 
 .text.neki 160
@@ -117,13 +95,35 @@ a6 4a 34 00 a6 49 04 00
 e6 d0 00 00 e6 30 02 00 
 .end
 
+.data.intrlabele 20
+00 20 00 00 04 00 00 00 
+0c 00 00 00 00 20 00 00 
+00 10 00 00 
+.end
+
+.data 4
+78 56 00 00 
+.end
+
+.text.fact 20
+36 81 00 00 26 62 00 00 
+5e 22 00 00 c1 05 00 00 
+e6 30 02 00 
+.end
+
+.text.intr 24
+16 6c 00 00 ee 30 02 00 
+5e 6d 00 00 11 6d 00 00 
+a1 e8 24 00 ee 30 02 00 
+.end
+
 %END%
 
-.text.neki - 220
-.text.intr - 196
 .data - 0
+.text.neki - 220
 .data.intrlabele - 4
 .text - 24
+.text.intr - 196
 .text.fact - 176
 
 %OUTPUT SECTION%

@@ -1,0 +1,57 @@
+%SYMBOLS SECTION%
+  Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+                             -                        sth123                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                     testInstr                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                      nastavak                             1                     .text.ert                             0                         LOCAL                             0                         LABEL
+                             -                        label1                             1                     .text.ert                            16                         LOCAL                             0                         LABEL
+                             -                     .text.ert                             1                     .text.ert                             0                         LOCAL                            28                       SECTION
+                             -                             b                             1                     .data.ert                             0                         LOCAL                             0                         LABEL
+                             -                          main                             1                         .text                             0                        GLOBAL                             0                         LABEL
+                             -                             t                             1                         .data                             2                         LOCAL                             0                         LABEL
+                             -                             r                             1                         .data                             6                         LOCAL                             0                         LABEL
+                             -                           sth                             1                         .data                            20                         LOCAL                             0                         LABEL
+                             -                             a                             1                         .data                             0                         LOCAL                             0                         LABEL
+                             -                          aint                             1                      .bss.bbb                             0                         LOCAL                             0                         LABEL
+                             -                         .data                             1                         .data                             0                         LOCAL                            24                       SECTION
+                             -                      .bss.bbb                             1                      .bss.bbb                             0                         LOCAL                             8                       SECTION
+                             -                         achar                             1                      .bss.bbb                             4                         LOCAL                             0                         LABEL
+                             -                     .data.ert                             1                     .data.ert                             0                         LOCAL                             1                       SECTION
+                             -                         aword                             1                      .bss.bbb                             5                         LOCAL                             0                         LABEL
+                             -                         .text                             1                         .text                             0                         LOCAL                            16                       SECTION
+%END%
+
+%RELOCATIONS SECTION%
+  Relocation     SymbolName     SectionName    Offset         Type           
+                             -                        sth123                         .data                            20                          LONG
+                             -                      nastavak                         .text                             0                      LDCRELOC
+                             -                     testInstr                     .text.ert                             4                      LDCRELOC
+%END%
+
+%SECTIONS SECTION%
+.text.ert 28
+16 81 00 00 f6 14 ff ff 
+f6 04 ff ff c6 04 00 00 
+f6 12 67 05 b6 00 00 00 
+00 00 00 00 
+.end
+
+.data 24
+78 56 43 23 01 00 22 00 
+00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 
+.end
+
+.bss.bbb 8
+00 00 00 00 00 00 00 00 
+.end
+
+.text 16
+f6 14 ff ff f6 04 ff ff 
+e6 90 00 00 c6 83 00 00 
+.end
+
+.data.ert 1
+03 
+.end
+
+%END%

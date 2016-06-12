@@ -1,0 +1,89 @@
+%SYMBOLS SECTION%
+  Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+                             -                           sth                             1                         .data                            20                         LOCAL                             0                         LABEL
+                             -                             r                             1                         .data                             6                         LOCAL                             0                         LABEL
+                             -                             t                             1                         .data                             2                         LOCAL                             0                         LABEL
+                             -                             b                             1                     .data.ert                             0                         LOCAL                             0                         LABEL
+                             -                        sth123                             1                         .data                            24                        GLOBAL                             0                         LABEL
+                             -                     testInstr                             1                    .text.neki                             0                        GLOBAL                             0                         LABEL
+                             -                      nastavak                             1                     .text.ert                             0                         LOCAL                             0                         LABEL
+                             -                         .data                             1                         .data                             0                         LOCAL                            28                       SECTION
+                             -                      .bss.bbb                             1                      .bss.bbb                             0                         LOCAL                             8                       SECTION
+                             -                         .text                             1                         .text                             0                         LOCAL                            16                       SECTION
+                             -                        label1                             1                     .text.ert                            16                         LOCAL                             0                         LABEL
+                             -                     .text.ert                             1                     .text.ert                             0                         LOCAL                            28                       SECTION
+                             -                     .data.ert                             1                     .data.ert                             0                         LOCAL                             1                       SECTION
+                             -                         aword                             1                      .bss.bbb                             5                         LOCAL                             0                         LABEL
+                             -                         achar                             1                      .bss.bbb                             4                         LOCAL                             0                         LABEL
+                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                             8                       SECTION
+                             -                          aint                             1                      .bss.bbb                             0                         LOCAL                             0                         LABEL
+                             -                             a                             1                         .data                             0                         LOCAL                             0                         LABEL
+                             -                          main                             1                         .text                             0                        GLOBAL                             0                         LABEL
+%END%
+
+%RELOCATIONS SECTION%
+  Relocation     SymbolName     SectionName    Offset         Type           
+                             -                        sth123                        output                            28                          LONG
+                             -                      nastavak                        output                            37                      LDCRELOC
+                             -                     testInstr                        output                            57                      LDCRELOC
+%END%
+
+%SECTIONS SECTION%
+.text.neki 8
+66 41 00 00 e6 30 02 00 
+.end
+
+.text.ert 28
+16 81 00 00 f6 14 00 00 
+f6 04 51 00 c6 04 00 00 
+f6 12 67 05 b6 00 00 00 
+00 00 00 00 
+.end
+
+.text 16
+f6 14 00 00 f6 04 35 00 
+e6 90 00 00 c6 83 00 00 
+.end
+
+.data.ert 1
+03 
+.end
+
+.bss.bbb 8
+00 00 00 00 00 00 00 00 
+.end
+
+.data 28
+78 56 43 23 01 00 22 00 
+00 00 00 00 00 00 00 00 
+00 00 00 00 20 00 00 00 
+21 43 65 87 
+.end
+
+%END%
+
+.text.neki - 81
+.text.ert - 53
+.bss.bbb - 0
+.data.ert - 36
+.text - 37
+.data - 8
+
+%OUTPUT SECTION%
+Main: 37
+output 89
+00 00 00 00 00 00 00 00 
+78 56 43 23 01 00 22 00 
+00 00 00 00 00 00 00 00 
+00 00 00 00 20 00 00 00 
+21 43 65 87 03 f6 14 00 
+00 f6 04 35 00 e6 90 00 
+00 c6 83 00 00 16 81 00 
+00 f6 14 00 00 f6 04 51 
+00 c6 04 00 00 f6 12 67 
+05 b6 00 00 00 00 00 00 
+00 66 41 00 00 e6 30 02 
+00 
+.end
+
+%END%

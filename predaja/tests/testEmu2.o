@@ -1,16 +1,16 @@
 %SYMBOLS SECTION%
   Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+                             -                          fact                             0                         start                             0                        GLOBAL                             0                         LABEL
                              -                          calc                             1                    .text.neki                            44                         LOCAL                             0                         LABEL
                              -                          wait                             1                    .text.neki                            32                         LOCAL                             0                         LABEL
-                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                           160                       SECTION
+                             -                          kraj                             1                    .text.neki                           156                         LOCAL                             0                         LABEL
+                             -                    .text.intr                             1                    .text.intr                             0                         LOCAL                            24                       SECTION
                              -                     testInstr                             1                    .text.neki                             0                        GLOBAL                             0                         LABEL
+                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                           160                       SECTION
+                             -                timerInterrupt                             1                    .text.intr                             0                        GLOBAL                             0                         LABEL
                              -                         ispis                             1                    .text.neki                            88                         LOCAL                             0                         LABEL
                              -                        ispis2                             1                    .text.neki                           132                         LOCAL                             0                         LABEL
                              -                   kbInterrupt                             1                    .text.intr                             8                        GLOBAL                             0                         LABEL
-                             -                          kraj                             1                    .text.neki                           156                         LOCAL                             0                         LABEL
-                             -                          fact                             0                         start                             0                        GLOBAL                             0                         LABEL
-                             -                    .text.intr                             1                    .text.intr                             0                         LOCAL                            24                       SECTION
-                             -                timerInterrupt                             1                    .text.intr                             0                        GLOBAL                             0                         LABEL
 %END%
 
 %RELOCATIONS SECTION%

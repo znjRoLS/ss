@@ -35,5 +35,6 @@ nastavak:
     call r4, 0
 label1:
     ldch r2, 0x567
+    halt
 
 

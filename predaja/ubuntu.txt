@@ -1,0 +1,5 @@
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get remove g++
+sudo apt-get install g++-5
+sudo ln -s /usr/bin/g++-5 /usr/bin/c++
