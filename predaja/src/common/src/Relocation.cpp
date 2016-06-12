@@ -26,11 +26,11 @@ string Relocation::Serialize()
     stringstream out;
 
     out << right <<
-        setw(15) << "-" <<
-        setw(15) << symbolName <<
-        setw(15) << section <<
-        setw(15) << offset <<
-        setw(15) << relocationType <<
+        setw(MAXNAME) << "-" <<
+        setw(MAXNAME) << symbolName <<
+        setw(MAXNAME) << section <<
+        setw(MAXNAME) << offset <<
+        setw(MAXNAME) << relocationType <<
         endl;
 
     return out.str();

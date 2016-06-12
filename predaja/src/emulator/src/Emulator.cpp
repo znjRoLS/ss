@@ -17,18 +17,22 @@ ofstream Emulator::logFile("emulator.log");
 
 Emulator::Emulator() { }
 
-void Emulator::Emulate(ifstream &inputFiles)
+void Emulator::Emulate(ifstream &inputFile)
 {
     try {
 
         logFile << "Loading section" << endl;
-        program.LoadSection(inputFiles);
+
+        loader.Load(inputFile);
+        //program.LoadSection(inputFiles);
+
 
 
         ifstream defaultIVT("object_files/defaultIVT.o");
+        loader.LoadDefaultIVT(inputFile);
 
         logFile << "Load default ivt" << endl;
-        program.LoadDefaultIVT(defaultIVT);
+        //program.LoadDefaultIVT(defaultIVT);
 
 
         logFile << "Started executing" << endl;
@@ -40,6 +44,8 @@ void Emulator::Emulate(ifstream &inputFiles)
     {
         cerr << e.what() << endl;
         logFile << "ERROR: " << e.what() << endl;
+
+        cout.flush();
     }
 
 }
@@ -48,7 +54,8 @@ void Emulator::Emulate(ifstream &inputFiles)
 
 void Emulator::Execute()
 {
-    program.Init();
+    //TODO: dont use pointers, please
+    program.Init(loader.memory, loader.startPoint);
 
     program.ReadNext();
 

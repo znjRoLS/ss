@@ -1,0 +1,56 @@
+%SYMBOLS SECTION%
+  Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+                             -                          calc                             1                    .text.neki                            44                         LOCAL                             0                         LABEL
+                             -                          wait                             1                    .text.neki                            32                         LOCAL                             0                         LABEL
+                             -                    .text.neki                             1                    .text.neki                             0                         LOCAL                           160                       SECTION
+                             -                     testInstr                             1                    .text.neki                             0                        GLOBAL                             0                         LABEL
+                             -                         ispis                             1                    .text.neki                            88                         LOCAL                             0                         LABEL
+                             -                        ispis2                             1                    .text.neki                           132                         LOCAL                             0                         LABEL
+                             -                   kbInterrupt                             1                    .text.intr                             8                        GLOBAL                             0                         LABEL
+                             -                          kraj                             1                    .text.neki                           156                         LOCAL                             0                         LABEL
+                             -                          fact                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                    .text.intr                             1                    .text.intr                             0                         LOCAL                            24                       SECTION
+                             -                timerInterrupt                             1                    .text.intr                             0                        GLOBAL                             0                         LABEL
+%END%
+
+%RELOCATIONS SECTION%
+  Relocation     SymbolName     SectionName    Offset         Type           
+                             -                          wait                    .text.neki                             0                      LDCRELOC
+                             -                          calc                    .text.neki                             8                      LDCRELOC
+                             -                         ispis                    .text.neki                            16                      LDCRELOC
+                             -                          kraj                    .text.neki                            24                      LDCRELOC
+                             -                        ispis2                    .text.neki                            44                      LDCRELOC
+                             -                          fact                    .text.neki                            68                      LDCRELOC
+%END%
+
+%SECTIONS SECTION%
+.text.intr 24
+16 6c 00 00 ee 30 02 00 
+5e 6d 00 00 11 6d 00 00 
+a1 e8 24 00 ee 30 02 00 
+.end
+
+.text.neki 160
+f6 16 ff ff f6 06 ff ff 
+f6 15 ff ff f6 05 ff ff 
+f6 14 ff ff f6 04 ff ff 
+f6 13 ff ff f6 03 ff ff 
+5e 6d 00 00 e0 b0 00 00 
+e6 d0 00 00 f6 16 ff ff 
+f6 06 ff ff f6 11 00 00 
+f6 01 01 00 d6 72 01 00 
+26 22 0c 00 f6 15 ff ff 
+f6 05 ff ff c6 05 00 00 
+f6 1a 00 00 f6 0a 20 20 
+5e 21 00 00 e0 d0 00 00 
+d6 15 01 00 46 a5 02 00 
+36 a5 02 00 d6 12 01 00 
+26 42 01 00 16 22 0c 00 
+a6 4a 08 00 46 a1 02 00 
+e6 90 00 00 66 4a 01 00 
+5e 2a 08 08 e5 70 00 00 
+a6 4a 34 00 a6 49 04 00 
+e6 d0 00 00 e6 30 02 00 
+.end
+
+%END%

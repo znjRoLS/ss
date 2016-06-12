@@ -53,6 +53,8 @@ private:
 
     u_int32_t GetSymbolVal(string symbolName);
 
+    vector<string> symbolsNotDefined;
+
 
 };
 

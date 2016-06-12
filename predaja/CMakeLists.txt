@@ -27,5 +27,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 #target_link_libraries(ss pthread)
 
 #set(SOURCE_FILES main.cpp)
-add_executable(bin/compiler ${SOURCE_FILES_COMPILER} ${SOURCE_FILES_COMMON})
-add_executable(bin/emulator ${SOURCE_FILES_EMULATOR} ${SOURCE_FILES_COMMON})
+add_executable(compiler ${SOURCE_FILES_COMPILER} ${SOURCE_FILES_COMMON})
+add_executable(emulator ${SOURCE_FILES_EMULATOR} ${SOURCE_FILES_COMMON})

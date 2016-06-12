@@ -11,6 +11,7 @@
 
 #include "Section.h"
 #include "Program.h"
+#include "Loader.h"
 
 using namespace std;
 
@@ -30,6 +31,9 @@ private:
 
 
     Program program;
+
+
+    Loader loader;
 
 
 };

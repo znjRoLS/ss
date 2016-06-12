@@ -56,7 +56,7 @@ ScriptOperandType GetType(string token)
         if (parseRule.first == SYMBOL)
             continue;
 
-        if (regex_match(token, parseRule.second))
+        if (regex_search(token, parseRule.second))
         {
             if (!defined)
             {
@@ -111,33 +111,33 @@ u_int32_t ParseOperand(string token, int dotVal, unordered_map<string, Symbol> &
     smatch base_match;
     u_int32_t ret;
 
-    if (regex_match(token, base_match, tokenParsers[DEC]))
+    if (regex_search(token, base_match, tokenParsers[DEC]))
     {
         stringstream ss;
         ss << base_match[1];
         ss >> ret;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[HEX]))
+    else if (regex_search(token, base_match, tokenParsers[HEX]))
     {
         stringstream ss;
         ss << base_match[1];
         ss >> hex >> ret;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[DOT]))
+    else if (regex_search(token, base_match, tokenParsers[DOT]))
     {
         ret = dotVal;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[SCRIPTLABEL]))
+    else if (regex_search(token, base_match, tokenParsers[SCRIPTLABEL]))
     {
         //cout << base_match[1] << endl;
         //cout << base_match[0] << endl;
         ret = GetLabelVal(base_match[1], symbols, sectionPositions);
     }
 
-    else if (regex_match(token, base_match, tokenParsers[ALIGN]))
+    else if (regex_search(token, base_match, tokenParsers[ALIGN]))
     {
 
         u_int32_t first = ParseOperand(base_match[1], dotVal, symbols, sectionPositions);
@@ -186,7 +186,7 @@ void splitExpression(const string &s, vector<pair<string, bool> > & v){
     string processMe = s;
     smatch base_match;
 
-    while(regex_match(processMe, base_match, r))
+    while(regex_search(processMe, base_match, r))
     {
         //cout << "found " << base_match[0] << " " << base_match[1] << " " << base_match[2] << endl;
         v.push_back({base_match[2], base_match[1] == "-"});
@@ -215,14 +215,14 @@ void LoaderScriptFile::FillSymbolsAndSectionPositions(unordered_map<string,Symbo
     {
         //cout << line << endl;
         smatch base_match;
-        if (regex_match(line, base_match, section))
+        if (regex_search(line, base_match, section))
         {
             //TODO: check if section exists
             sectionPositions[symbols.find(line)->second.name] = locationCounter;
             locationCounter += symbols.find(line)->second.size;
         }
 
-        else if (regex_match(line, base_match, assignment))
+        else if (regex_search(line, base_match, assignment))
         {
             //TODO: what have youuuu doneeeeeeeee
 //            cout << "Whaaa" << endl;

@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <memory>
 #include <queue>
+#include <Instruction.h>
 
 #include "Compiler.h"
 #include "Instruction.h"
@@ -160,6 +161,11 @@ Compiler::Compiler()
 
                 if (operandType == SYMBOL)
                 {
+                    if (symbols.find(secondParam) == symbols.end())
+                    {
+                        throw runtime_error("Symbol not defined ! " + secondParam );
+                    }
+
                     Relocation rel(secondParam, currentSection, offsetCounter, RelocationType::LDCRELOC);
                     relocations.push_back(rel);
                 }
@@ -296,6 +302,8 @@ Compiler::Compiler()
                     throw runtime_error("Not allowed to use psw in add or sub");
                 }
 
+                instr.instrCode.instruction_arithmetic_reg.dst = operand1;
+
                 string token2;
                 u_int32_t operand2;
                 TokenType operandType2;
@@ -314,14 +322,18 @@ Compiler::Compiler()
                     }
 
                     instr.instrCode.instruction_arithmetic_reg.addr = 0;
+                    instr.instrCode.instruction_arithmetic_reg.src = operand2;
                 }
                 else
                 {
                     instr.instrCode.instruction_arithmetic_imm.addr = 1;
+                    instr.instrCode.instruction_arithmetic_imm.imm = operand2;
                 }
 
-                instr.instrCode.instruction_arithmetic_reg.dst = operand1;
-                instr.instrCode.instruction_arithmetic_reg.src = operand2;
+//                if (instr.name == "add")
+//                {
+//                    cout << "add " << operand1 << operand2
+//                }
 
             }
             },
@@ -356,6 +368,8 @@ Compiler::Compiler()
 
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG});
                 instr.instrCode.instruction_ldr_str.r = operand;
+                //cout << instr.name << endl;
+                //cout << "operanddst " << operand << " " << token << endl;
 
                 if (token == "psw")
                 {
@@ -364,6 +378,7 @@ Compiler::Compiler()
 
                 GetOperand(tokens, token, operand, operandType, {OPERAND_REG, OPERAND_REGINCDEC, OPERAND_REGSPEC, OPERAND_REGSPECINCDEC});
                 instr.instrCode.instruction_ldr_str.a = operand;
+                //cout << "operanddrc " << operand << " " << token << endl;
 
                 bool isIncDec = (operandType == OPERAND_REGINCDEC || operandType == OPERAND_REGSPECINCDEC);
                 bool isPost, isInc;
@@ -930,7 +945,7 @@ TokenType Compiler::ParseToken(string token)
 {
     TokenType ret = ILLEGAL;
 
-    if (regex_match(token, tokenParsers[SYMBOL]))
+    if (regex_search(token, tokenParsers[SYMBOL]))
         ret = SYMBOL;
 
     for (auto &parseRule: tokenParsers)
@@ -938,7 +953,7 @@ TokenType Compiler::ParseToken(string token)
         if (parseRule.first == SYMBOL)
             continue;
 
-        if (regex_match(token, parseRule.second))
+        if (regex_search(token, parseRule.second))
         {
             if (ret == ILLEGAL || ret == SYMBOL)
             {
@@ -970,7 +985,7 @@ void Compiler::UpdateCurrentSection(string sectionName, SectionType &currentSect
 
     smatch base_match;
 
-    regex_match(sectionName, base_match, tokenParsers[SECTION]);
+    regex_search(sectionName, base_match, tokenParsers[SECTION]);
 
     if (base_match[1] == "text")
         currentSection = TEXT;
@@ -988,7 +1003,7 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
     bool isReg = false;
     u_int32_t ret;
 
-    if (regex_match(token, base_match, tokenParsers[OPERAND_REG]))
+    if (regex_search(token, base_match, tokenParsers[OPERAND_REG]))
     {
         isReg = true;
         stringstream ss;
@@ -996,41 +1011,47 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
         ss >> ret;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGINCDEC]))
+    else if (regex_search(token, base_match, tokenParsers[OPERAND_REGINCDEC]))
     {
         isReg = true;
         stringstream ss;
-        ss << base_match[1];
+
+        //TODO: damn regex
+        smatch temp_match;
+        regex_search(token, temp_match, regex("[0-9]+"));
+        //cout << token << " " << temp_match[0] << " " << endl;
+        ss << temp_match[0];
         ss >> ret;
+        //cout << ret << endl;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGSPEC]))
+    else if (regex_search(token, base_match, tokenParsers[OPERAND_REGSPEC]))
     {
         isReg = true;
         ret = specialRegisterValues[base_match[1]];
     }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_REGSPECINCDEC]))
+    else if (regex_search(token, base_match, tokenParsers[OPERAND_REGSPECINCDEC]))
     {
         isReg = true;
         ret = specialRegisterValues[base_match[1]];
     }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_HEX]))
+    else if (regex_search(token, base_match, tokenParsers[OPERAND_HEX]))
     {
         stringstream ss;
         ss << base_match[1];
         ss >> hex >> ret;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[OPERAND_DEC]))
+    else if (regex_search(token, base_match, tokenParsers[OPERAND_DEC]))
     {
         stringstream ss;
         ss << base_match[1];
         ss >> ret;
     }
 
-    else if (regex_match(token, base_match, tokenParsers[SYMBOLDIFF]))
+    else if (regex_search(token, base_match, tokenParsers[SYMBOLDIFF]))
     {
         string symbol1 = base_match[1];
         string symbol2 = base_match[2];
@@ -1056,13 +1077,13 @@ u_int32_t Compiler::ParseOperand(string token, int immSize)
 
     }
 
-    else if(regex_match(token, base_match, tokenParsers[SYMBOL]))
+    else if(regex_search(token, base_match, tokenParsers[SYMBOL]))
     {
         ret = UINT32_MAX;
     }
 
 /// /
-//    else if (regex_match(token, base_match, tokenParsers[SYMBOL]))
+//    else if (regex_search(token, base_match, tokenParsers[SYMBOL]))
 //    {
 //        string symbolToken = base_match[1];
 //        auto symbolPair = symbols.find(symbolToken);
@@ -1232,7 +1253,7 @@ void Compiler::HandleInstruction(string instructionName, string currentSection, 
 
 
     //TODO: refactor whole function
-    if (regex_match(instructionName, base_match, tokenParsers[INSTRUCTION])) {
+    if (regex_search(instructionName, base_match, tokenParsers[INSTRUCTION])) {
 
         string shortInstructionName = base_match[1];
         string condition = base_match[2];
@@ -1286,7 +1307,7 @@ void Compiler::HandleInstruction(string instructionName, string currentSection, 
             for (auto &instrTokens : multiInstructionTokens)
             {
                 //TODO: presuming this will always pass
-                regex_match(instrTokens.front(), base_match, tokenParsers[INSTRUCTION]);
+                regex_search(instrTokens.front(), base_match, tokenParsers[INSTRUCTION]);
 
                 instrTokens.pop();
 
@@ -1344,7 +1365,7 @@ void Compiler::AddNewSymbol(string symName, bool symDefined, SectionType symSect
     }
 
     TokenType tokenType = TokenType::LABEL;
-    if (regex_match(symName, tokenParsers[SECTION]))
+    if (regex_search(symName, tokenParsers[SECTION]))
     {
         tokenType = TokenType::SECTION;
     }

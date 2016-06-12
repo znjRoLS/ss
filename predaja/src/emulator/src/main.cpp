@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    string firstArg = argv[1];
+    string firstArg = argv[2];
 
     size_t lastindex = firstArg.find_last_of(".");
     string outputFileName = firstArg.substr(0, lastindex) + ".output";

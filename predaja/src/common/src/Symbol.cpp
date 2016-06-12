@@ -31,14 +31,14 @@ string Symbol::Serialize()
 {
     stringstream ss;
     ss << right <<
-        setw(15) << "-" <<
-        setw(15) << name <<
-        setw(15) << defined <<
-        setw(15) << sectionName <<
-        setw(15) << offset <<
-        setw(15) << scope <<
-        setw(15) << size <<
-        setw(15) << symbolType <<
+        setw(MAXNAME) << "-" <<
+        setw(MAXNAME) << name <<
+        setw(MAXNAME) << defined <<
+        setw(MAXNAME) << sectionName <<
+        setw(MAXNAME) << offset <<
+        setw(MAXNAME) << scope <<
+        setw(MAXNAME) << size <<
+        setw(MAXNAME) << symbolType <<
         endl;
 
     return ss.str();

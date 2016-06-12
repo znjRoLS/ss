@@ -1,0 +1,70 @@
+%SYMBOLS SECTION%
+  Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+                             -                   kbInterrupt                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                       advance                             1                         .text                           100                         LOCAL                             0                         LABEL
+                             -                          loop                             1                         .text                            88                         LOCAL                             0                         LABEL
+                             -              .data.intrlabele                             1              .data.intrlabele                             0                         LOCAL                            20                       SECTION
+                             -                        output                             1              .data.intrlabele                             0                         LOCAL                             0                         LABEL
+                             -                timerInterrupt                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                      advance2                             1                         .text                           136                         LOCAL                             0                         LABEL
+                             -                         loop2                             1                         .text                           124                         LOCAL                             0                         LABEL
+                             -                         .data                             1                         .data                             0                         LOCAL                             4                       SECTION
+                             -                     testInstr                             0                         start                             0                        GLOBAL                             0                         LABEL
+                             -                             a                             1                         .data                             0                         LOCAL                             0                         LABEL
+                             -                         .text                             1                         .text                             0                         LOCAL                           152                       SECTION
+                             -                    tmrIntrOut                             1              .data.intrlabele                             4                         LOCAL                             0                         LABEL
+                             -                          main                             1                         .text                             0                        GLOBAL                             0                         LABEL
+                             -                     kbIntrOut                             1              .data.intrlabele                             8                         LOCAL                             0                         LABEL
+                             -                      kbOutput                             1              .data.intrlabele                            12                         LOCAL                             0                         LABEL
+                             -                       kbInput                             1              .data.intrlabele                            16                         LOCAL                             0                         LABEL
+%END%
+
+%RELOCATIONS SECTION%
+  Relocation     SymbolName     SectionName    Offset         Type           
+                             -                timerInterrupt                         .text                             0                      LDCRELOC
+                             -                    tmrIntrOut                         .text                             8                      LDCRELOC
+                             -                   kbInterrupt                         .text                            24                      LDCRELOC
+                             -                     kbIntrOut                         .text                            32                      LDCRELOC
+                             -                      kbOutput                         .text                            48                      LDCRELOC
+                             -                       kbInput                         .text                            60                      LDCRELOC
+                             -                       advance                         .text                            72                      LDCRELOC
+                             -                          loop                         .text                            80                      LDCRELOC
+                             -                         loop2                         .text                           108                      LDCRELOC
+                             -                      advance2                         .text                           116                      LDCRELOC
+                             -                     testInstr                         .text                           136                      LDCRELOC
+%END%
+
+%SECTIONS SECTION%
+.text 152
+f6 16 ff ff f6 06 ff ff 
+f6 17 ff ff f6 07 ff ff 
+a6 e7 24 00 a6 c7 04 00 
+f6 16 ff ff f6 06 ff ff 
+f6 17 ff ff f6 07 ff ff 
+a6 e7 24 00 a6 c7 04 00 
+f6 19 ff ff f6 09 ff ff 
+a6 29 25 00 f6 18 ff ff 
+f6 08 ff ff a6 08 25 00 
+f6 15 ff ff f6 05 ff ff 
+f6 14 ff ff f6 04 ff ff 
+5e 6d 00 00 e0 b0 00 00 
+e6 90 00 00 d6 c2 01 00 
+16 e2 00 00 f6 14 ff ff 
+f6 04 ff ff f6 15 ff ff 
+f6 05 ff ff 5e 02 03 00 
+e5 b0 00 00 e6 90 00 00 
+f6 14 ff ff f6 04 ff ff 
+c6 04 00 00 b6 00 00 00 
+.end
+
+.data.intrlabele 20
+00 20 00 00 04 00 00 00 
+0c 00 00 00 00 20 00 00 
+00 10 00 00 
+.end
+
+.data 4
+78 56 00 00 
+.end
+
+%END%

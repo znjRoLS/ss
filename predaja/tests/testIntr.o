@@ -1,0 +1,60 @@
+%SYMBOLS SECTION%
+  Symbol         SymbolName     Defined        SectionName    Offset         Type           Size           SymbolType     
+              -    kbInterrupt              1      .text.inf            148          LOCAL              0          LABEL
+              - timerInterrupt              1      .text.inf            128          LOCAL              0          LABEL
+              -     tmrIntrOut              1      .data.inf              4          LOCAL              0          LABEL
+              -      .data.inf              1      .data.inf              0          LOCAL             20        SECTION
+              -         output              1      .data.inf              0          LOCAL              0          LABEL
+              -       kbOutput              1      .data.inf             12          LOCAL              0          LABEL
+              -      .text.inf              1      .text.inf              0          LOCAL            168        SECTION
+              -      kbIntrOut              1      .data.inf              8          LOCAL              0          LABEL
+              -           main              1      .text.inf              0         GLOBAL              0          LABEL
+              -           loop              1      .text.inf            108          LOCAL              0          LABEL
+              -        kbInput              1      .data.inf             16          LOCAL              0          LABEL
+              -        progEnd              1      .text.inf            124          LOCAL              0          LABEL
+%END%
+
+%RELOCATIONS SECTION%
+  Relocation     SymbolName     SectionName    Offset         Type           
+              -           loop      .text.inf              0       LDCRELOC
+              -        progEnd      .text.inf              8       LDCRELOC
+              - timerInterrupt      .text.inf             16       LDCRELOC
+              -     tmrIntrOut      .text.inf             24       LDCRELOC
+              -    kbInterrupt      .text.inf             40       LDCRELOC
+              -      kbIntrOut      .text.inf             48       LDCRELOC
+              -       kbOutput      .text.inf             64       LDCRELOC
+              -        kbInput      .text.inf             76       LDCRELOC
+%END%
+
+%SECTIONS SECTION%
+.text.inf 168
+f6 14 ff ff f6 04 ff ff 
+f6 15 ff ff f6 05 ff ff 
+f6 16 ff ff f6 06 ff ff 
+f6 17 ff ff f6 07 ff ff 
+a6 e7 24 00 a6 c7 04 00 
+f6 16 ff ff f6 06 ff ff 
+f6 17 ff ff f6 07 ff ff 
+a6 e7 24 00 a6 c7 04 00 
+f6 19 ff ff f6 09 ff ff 
+a6 29 25 00 f6 18 ff ff 
+f6 08 ff ff a6 08 25 00 
+06 01 00 00 06 01 00 00 
+06 01 00 00 06 01 00 00 
+06 01 00 00 16 63 00 00 
+5e ac 02 00 e0 b0 00 00 
+e6 90 00 00 b6 00 00 00 
+16 6c 00 00 d6 c7 01 00 
+16 27 0c 00 a6 e9 04 00 
+ee 30 02 00 16 6d 00 00 
+a6 e8 24 00 a6 e9 04 00 
+a6 e9 04 00 ee 30 02 00 
+.end
+
+.data.inf 20
+00 20 00 00 04 00 00 00 
+0c 00 00 00 00 20 00 00 
+00 10 00 00 
+.end
+
+%END%

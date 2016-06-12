@@ -219,7 +219,7 @@ u_int32_t Linker::GetSymbolVal(string symbolName)
 
 void Linker::FixRelocations()
 {
-    vector<Relocation> newRelocations;
+    //vector<Relocation> newRelocations;
     for (auto &rel:relocations)
     {
         auto symbol = symbols.find(rel.symbolName);
@@ -257,14 +257,19 @@ void Linker::FixRelocations()
                 section->second.Write(&high, rel.offset + 2 , 2);
                 section->second.Write(&low, rel.offset + 6, 2);
             }
+
+            rel.offset += sectionPositions[rel.section];
+            rel.section = "output";
         }
         else
         {
-            newRelocations.push_back(rel);
+            //logFile << "Symbol " << symbol->second.name << " not defined !" << endl;
+            //newRelocations.push_back(rel);
+            symbolsNotDefined.push_back(symbol->second.name);
         }
     }
 
-    relocations = newRelocations;
+    //relocations = newRelocations;
 }
 
 void Linker::WriteOutputFile(ofstream &outputFile)
@@ -368,9 +373,13 @@ void Linker::WriteOutputFile(ofstream &outputFile)
 
 void Linker::GenerateOutput()
 {
-    if (!relocations.empty())
+    if (!symbolsNotDefined.empty())
     {
-        logFile << "not all relocations fixed" << endl;
+        //logFile << "Not all relocations fixed" << endl;
+        logFile << "Symbols not defined: ";
+        for (auto &symbol: symbolsNotDefined)
+            logFile << symbol << " ";
+        logFile << endl;
         return;
     }
 
