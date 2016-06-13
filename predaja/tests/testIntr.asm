@@ -7,6 +7,11 @@
     kbInput: .long 0x1000
 .text.inf
 main:
+    ldc r1, 0x12345678
+    str r1, r1, 0
+    ldr r2, r1--, 0
+    ldr r2,r1--,0
+
     ldc r4, loop
     ldc r5, progEnd
 

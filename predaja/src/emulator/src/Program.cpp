@@ -470,30 +470,71 @@ Program::Program():
 
 u_int32_t Program::GetMemory(u_int32_t ind)
 {
-    if (ind >= MEMORY_SIZE)
-    {
-        throw runtime_error("Index for memory out of bounds !");
-    }
-
     u_int32_t res;
 
-    memcpy(&res, memory + ind, 4);
+    if (ind >= MEMORY_SIZE)
+    {
+        if (ind > UINT32_MAX - 4)
+        {
+            throw runtime_error("Index for memory out of bounds ! " + ind);
+        }
+        
+        u_int8_t resArr[4];
 
-    Emulator::logFile << "Fetched memory from " << ind << " - " << res<<endl;
+        for (u_int32_t i = 0; i < 4; i ++)
+        {
+            if (bigMemory.find(ind + i) == bigMemory.end())
+            {
+                bigMemory[ind + i] = 0;
+            }
+
+            resArr[i] = bigMemory[ind+i];
+        }
+        
+        memcpy(&res, resArr, 4);
+
+        Emulator::logFile << "Fetched big memory from " << ind << " - " << res<<endl;
+    }
+    else
+    {
+
+        memcpy(&res, memory + ind, 4);
+
+        Emulator::logFile << "Fetched memory from " << ind << " - " << res<<endl;
+    }
+
 
     return res;
 }
 
 void Program::SetMemory(u_int32_t val, u_int32_t ind)
 {
+
     if (ind >= MEMORY_SIZE)
     {
-        throw runtime_error("Index for memory out of bounds !");
+        if (ind > UINT32_MAX - 4)
+        {
+            throw runtime_error("Index for memory out of bounds ! " + ind);
+        }
+        
+        u_int8_t resArr[4];
+
+        memcpy(resArr, &val, 4);
+
+        for (u_int32_t i = 0; i < 4; i ++)
+        {
+            bigMemory[ind+i] = resArr[i];
+        }
+        
+        Emulator::logFile << "Set memory " << ind << " - " << val<<endl;
     }
+    else
+    {
 
-    Emulator::logFile << "Set memory " << ind << " - " << val<<endl;
+        Emulator::logFile << "Set memory " << ind << " - " << val<<endl;
 
-    memcpy(memory +ind, &val, 4);
+        memcpy(memory +ind, &val, 4);
+    }    
 }
 
 u_int32_t Program::SignExt(u_int32_t val, size_t size)

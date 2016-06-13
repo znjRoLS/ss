@@ -39,6 +39,8 @@ public:
 
     u_int8_t *memory;
 
+    unordered_map<u_int32_t, u_int8_t> bigMemory;
+
     //u_int8_t stack[STACK_SIZE];
 
     Section programSection;
